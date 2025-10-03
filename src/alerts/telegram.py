@@ -157,8 +157,9 @@ Early Score: {earlyscore:.0f}/100
         token_address = data.get("token_address", "")
         chain = data.get("chain_id", "")
         price_usd = data.get("price_usd", 0)
-        wallet_stats_list = data.get("wallet_stats_list", [])
+        wallet_stats_list = data.get("wallets", [])  # Changed from wallet_stats_list
         num_wallets = len(wallet_stats_list)
+        side = data.get("side", "buy")
 
         # Format wallet list
         wallet_lines = []
@@ -172,10 +173,21 @@ Early Score: {earlyscore:.0f}/100
         wallet_list = "\n".join(wallet_lines)
         avg_pnl = total_pnl / num_wallets if num_wallets > 0 else 0
 
-        # Generate buy link
-        buy_link = self._get_buy_link(chain, token_address)
+        # Different messages for buys vs sells
+        if side == "buy":
+            emoji = "🚨"
+            action = "BUYING"
+            confidence = "⚡ STRONG SIGNAL - Multiple profitable whales buying same token!\n⚡ Copy contract address above to buy immediately"
+            buy_link = self._get_buy_link(chain, token_address)
+            action_section = f"""🚀 QUICK BUY:
+{buy_link}"""
+        else:
+            emoji = "🔴"
+            action = "SELLING"
+            confidence = "⚠️ EXIT SIGNAL - Multiple whales taking profits!\n⚠️ Consider selling your position"
+            action_section = "⚠️ WHALES ARE EXITING - Time to sell?"
 
-        message = f"""🚨 CONFLUENCE ALERT - {num_wallets} WHALES BUYING!
+        message = f"""{emoji} CONFLUENCE ALERT - {num_wallets} WHALES {action}!
 
 💰 TOKEN: {token_symbol}
 📍 Price: ${price_usd:.8f}
@@ -189,12 +201,10 @@ Early Score: {earlyscore:.0f}/100
 💵 Avg 30D PnL: ${avg_pnl:,.0f}
 ⛓ Chain: {chain.title()}
 
-🚀 QUICK BUY:
-{buy_link}
+{action_section}
 📊 Chart: https://dexscreener.com/{chain}/{token_address}
 
-⚡ STRONG SIGNAL - Multiple profitable whales buying same token!
-⚡ Copy contract address above to buy immediately
+{confidence}
 """
         return message
 

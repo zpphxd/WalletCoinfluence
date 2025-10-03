@@ -25,28 +25,32 @@ class ConfluenceDetector:
         )
         self.window_minutes = settings.confluence_minutes
 
-    def record_buy(
+    def record_trade(
         self,
         token_address: str,
         chain_id: str,
         wallet_address: str,
+        side: str,  # "buy" or "sell"
         metadata: Dict[str, Any],
     ) -> None:
-        """Record a buy event in the time window.
+        """Record a trade event (buy or sell) in the time window.
 
         Args:
             token_address: Token address
             chain_id: Chain identifier
-            wallet_address: Wallet that bought
+            wallet_address: Wallet that traded
+            side: "buy" or "sell"
             metadata: Additional data (price, tx_hash, etc)
         """
-        key = f"confluence:{chain_id}:{token_address}"
+        # Separate keys for buys and sells
+        key = f"confluence:{side}:{chain_id}:{token_address}"
         timestamp = datetime.utcnow().timestamp()
 
         # Store as sorted set with timestamp as score
         value = json.dumps({
             "wallet": wallet_address,
             "ts": timestamp,
+            "side": side,
             **metadata,
         })
 
@@ -55,22 +59,34 @@ class ConfluenceDetector:
         # Set expiry to window + buffer
         self.redis.expire(key, self.window_minutes * 60 + 300)
 
-        logger.debug(f"Recorded buy for {wallet_address[:8]}... on {token_address[:8]}...")
+        logger.debug(f"Recorded {side} for {wallet_address[:8]}... on {token_address[:8]}...")
+
+    # Keep old method for backwards compatibility
+    def record_buy(
+        self,
+        token_address: str,
+        chain_id: str,
+        wallet_address: str,
+        metadata: Dict[str, Any],
+    ) -> None:
+        """Record a buy event (backwards compatible wrapper)."""
+        self.record_trade(token_address, chain_id, wallet_address, "buy", metadata)
 
     def check_confluence(
-        self, token_address: str, chain_id: str, min_wallets: int = 2
+        self, token_address: str, chain_id: str, side: str = "buy", min_wallets: int = 2
     ) -> Optional[List[Dict[str, Any]]]:
         """Check if confluence exists within the time window.
 
         Args:
             token_address: Token address
             chain_id: Chain identifier
+            side: "buy" or "sell"
             min_wallets: Minimum number of wallets for confluence
 
         Returns:
-            List of buy events if confluence detected, None otherwise
+            List of trade events if confluence detected, None otherwise
         """
-        key = f"confluence:{chain_id}:{token_address}"
+        key = f"confluence:{side}:{chain_id}:{token_address}"
 
         # Get all events in the window
         cutoff = datetime.utcnow() - timedelta(minutes=self.window_minutes)
@@ -99,8 +115,9 @@ class ConfluenceDetector:
                 events.append(data)
 
         if len(events) >= min_wallets:
+            action = "bought" if side == "buy" else "sold"
             logger.info(
-                f"Confluence detected: {len(events)} wallets bought "
+                f"🚨 CONFLUENCE DETECTED: {len(events)} whales {action} "
                 f"{token_address[:8]}... on {chain_id}"
             )
             return events

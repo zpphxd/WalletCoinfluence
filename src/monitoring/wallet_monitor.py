@@ -51,11 +51,14 @@ class WalletMonitor:
                     new_trades = await self._check_wallet_for_new_trades(wallet)
 
                     for trade in new_trades:
-                        # Record this buy in confluence tracker
-                        self.confluence.record_buy(
+                        side = trade.get("side", "buy")  # "buy" or "sell"
+
+                        # Record trade in confluence tracker
+                        self.confluence.record_trade(
                             trade["token_address"],
                             trade["chain_id"],
                             wallet.address,
+                            side,
                             {
                                 "price_usd": trade.get("price_usd", 0),
                                 "value_usd": trade.get("value_usd", 0),
@@ -63,24 +66,27 @@ class WalletMonitor:
                             }
                         )
 
-                        # Check if this creates confluence (≥2 wallets)
+                        # Check if this creates confluence (≥2 whales)
                         confluence_events = self.confluence.check_confluence(
                             trade["token_address"],
                             trade["chain_id"],
+                            side=side,
                             min_wallets=2
                         )
 
                         if confluence_events:
-                            # Send confluence alert with all participating wallets
+                            # SEND CONFLUENCE ALERT (≥2 whales trading same token)
                             await self._send_confluence_alert(
-                                trade, confluence_events
+                                trade, confluence_events, side=side
                             )
                             alerts_sent += 1
+                            action = "buying" if side == "buy" else "selling"
+                            logger.info(
+                                f"🚨 CONFLUENCE ALERT SENT: {len(confluence_events)} whales "
+                                f"{action} {trade['token_address'][:10]}..."
+                            )
 
-                        else:
-                            # Send single wallet alert
-                            await self._send_single_alert(trade, wallet)
-                            alerts_sent += 1
+                        # DO NOT send single wallet alerts - user only wants confluence
 
                 except Exception as e:
                     logger.error(f"Error monitoring wallet {wallet.address}: {str(e)}")
@@ -94,27 +100,63 @@ class WalletMonitor:
             return 0
 
     def _get_watchlist_wallets(self) -> List[Wallet]:
-        """Get wallets that meet watchlist criteria.
+        """Get TOP 30 WHALES ONLY - best performers ranked by composite score.
 
         Returns:
-            List of watchlist wallets
+            List of top 30 whale wallets
         """
         try:
-            # Get wallets with good 30D stats
-            watchlist = (
-                self.db.query(Wallet)
+            from sqlalchemy import func, case
+
+            # Calculate composite score for each wallet:
+            # - 30% weight: Unrealized PnL rank (current position value)
+            # - 30% weight: Trade activity rank (more active = better)
+            # - 40% weight: EarlyScore rank (timing ability)
+
+            # Get all wallet stats with PnL > $0 (only profitable whales)
+            profitable_wallets = (
+                self.db.query(
+                    Wallet,
+                    WalletStats30D,
+                    # Normalize unrealized_pnl_usd to 0-100 scale
+                    (WalletStats30D.unrealized_pnl_usd).label('pnl_score'),
+                    # Normalize trades_count to 0-100 scale
+                    (WalletStats30D.trades_count * 10).label('activity_score'),
+                    # EarlyScore is already 0-100
+                    (WalletStats30D.earlyscore_median).label('early_score'),
+                )
                 .join(WalletStats30D, Wallet.address == WalletStats30D.wallet_address)
                 .filter(
-                    WalletStats30D.realized_pnl_usd
-                    >= settings.add_min_realized_pnl_30d_usd,
-                    WalletStats30D.trades_count >= settings.add_min_trades_30d,
-                    WalletStats30D.best_trade_multiple
-                    >= settings.add_min_best_trade_multiple,
+                    WalletStats30D.unrealized_pnl_usd > 0,  # MUST be profitable
+                    WalletStats30D.trades_count >= 1,  # At least 1 trade
                 )
                 .all()
             )
 
-            return watchlist
+            # Calculate composite score for each wallet
+            scored_wallets = []
+            for wallet, stats, pnl_score, activity_score, early_score in profitable_wallets:
+                # Composite score (weighted average)
+                composite = (
+                    0.30 * (pnl_score or 0) +
+                    0.30 * min(activity_score or 0, 100) +  # Cap at 100
+                    0.40 * (early_score or 0)
+                )
+
+                scored_wallets.append((wallet, composite))
+
+            # Sort by composite score (highest first)
+            scored_wallets.sort(key=lambda x: x[1], reverse=True)
+
+            # Return TOP 30 WHALES ONLY
+            top_30 = [wallet for wallet, score in scored_wallets[:30]]
+
+            logger.info(
+                f"🐋 TOP 30 WHALES selected from {len(profitable_wallets)} profitable wallets "
+                f"(composite scoring: 30% PnL + 30% activity + 40% timing)"
+            )
+
+            return top_30
 
         except Exception as e:
             logger.error(f"Error getting watchlist: {str(e)}")
@@ -259,13 +301,14 @@ class WalletMonitor:
             logger.error(f"Error sending single alert: {str(e)}")
 
     async def _send_confluence_alert(
-        self, trade: Dict[str, Any], confluence_events: List[Dict[str, Any]]
+        self, trade: Dict[str, Any], confluence_events: List[Dict[str, Any]], side: str = "buy"
     ) -> None:
-        """Send alert for confluence (multiple wallets buying).
+        """Send alert for confluence (multiple wallets buying or selling).
 
         Args:
             trade: Trade data
             confluence_events: List of event dicts from confluence detector
+            side: "buy" or "sell"
         """
         try:
             # Get token data
@@ -312,6 +355,7 @@ class WalletMonitor:
                 "avg_pnl_30d": avg_pnl,
                 "window_minutes": settings.confluence_minutes,
                 "liquidity_usd": 0,  # TODO: fetch from DexScreener
+                "side": side,  # "buy" or "sell"
             }
             await self.telegram.send_confluence_alert(alert_data)
 

@@ -63,6 +63,7 @@ class BaseAPIClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
+        rate_limit_delay: float = 0,
     ) -> Dict[str, Any]:
         """Make GET request with retry logic.
 
@@ -70,6 +71,7 @@ class BaseAPIClient:
             endpoint: API endpoint (without base URL)
             params: Query parameters
             headers: Additional headers
+            rate_limit_delay: Delay in seconds before making request (for rate limiting)
 
         Returns:
             JSON response
@@ -77,6 +79,11 @@ class BaseAPIClient:
         Raises:
             APIError: If request fails
         """
+        # Add rate limiting delay if specified
+        if rate_limit_delay > 0:
+            import asyncio
+            await asyncio.sleep(rate_limit_delay)
+
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         request_headers = self._get_headers()
         if headers:

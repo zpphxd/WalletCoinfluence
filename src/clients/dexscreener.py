@@ -13,6 +13,9 @@ class DexScreenerClient(BaseAPIClient):
     def __init__(self) -> None:
         """Initialize DEX Screener client."""
         super().__init__(base_url="https://api.dexscreener.com/latest")
+        # In-memory cache to reduce API calls
+        self._cache = {}
+        self._cache_ttl = 300  # 5 minutes
 
     async def get_trending_tokens(self, chain: str = "ethereum") -> List[Dict[str, Any]]:
         """Fetch trending tokens for a specific chain.
@@ -35,7 +38,8 @@ class DexScreenerClient(BaseAPIClient):
             dex_chain = chain_map.get(chain, chain)
 
             # Try chain-specific search endpoint instead of boosted
-            response = await self.get(f"dex/search?q=chainId:{dex_chain}")
+            # Add 3 second delay to avoid rate limiting (INCREASED from 2s)
+            response = await self.get(f"dex/search?q=chainId:{dex_chain}", rate_limit_delay=3.0)
 
             pairs = response.get("pairs")
 
@@ -73,7 +77,7 @@ class DexScreenerClient(BaseAPIClient):
             return []
 
     async def get_token_info(self, token_address: str) -> Dict[str, Any]:
-        """Get detailed info for a specific token.
+        """Get detailed info for a specific token with caching.
 
         Args:
             token_address: Token contract address
@@ -81,8 +85,19 @@ class DexScreenerClient(BaseAPIClient):
         Returns:
             Token info
         """
+        import time
+
+        # Check cache first
+        cache_key = f"token_info:{token_address}"
+        if cache_key in self._cache:
+            cached_data, cached_time = self._cache[cache_key]
+            if time.time() - cached_time < self._cache_ttl:
+                logger.debug(f"Using cached data for {token_address[:10]}...")
+                return cached_data
+
         try:
-            response = await self.get(f"dex/tokens/{token_address}")
+            # Add 3 second delay to avoid rate limiting (INCREASED from 2s)
+            response = await self.get(f"dex/tokens/{token_address}", rate_limit_delay=3.0)
             pairs = response.get("pairs", [])
 
             if not pairs:
@@ -91,7 +106,7 @@ class DexScreenerClient(BaseAPIClient):
             # Use the pair with highest liquidity
             best_pair = max(pairs, key=lambda p: float(p.get("liquidity", {}).get("usd", 0)))
 
-            return {
+            result = {
                 "token_address": token_address,
                 "chain_id": best_pair.get("chainId"),
                 "symbol": best_pair.get("baseToken", {}).get("symbol"),
@@ -100,6 +115,11 @@ class DexScreenerClient(BaseAPIClient):
                 "volume_24h_usd": float(best_pair.get("volume", {}).get("h24", 0)),
                 "price_change_24h": float(best_pair.get("priceChange", {}).get("h24", 0)),
             }
+
+            # Cache the result
+            self._cache[cache_key] = (result, time.time())
+
+            return result
 
         except Exception as e:
             logger.error(f"Error fetching token info for {token_address}: {str(e)}")
