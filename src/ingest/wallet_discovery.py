@@ -127,6 +127,7 @@ class WalletDiscovery:
                             first_seen_at=datetime.utcnow(),
                         )
                         self.db.add(wallet)
+                        self.db.flush()  # Flush to make wallet visible to subsequent queries
                         wallets_found += 1
 
                     # Update last active
@@ -154,6 +155,7 @@ class WalletDiscovery:
                             venue=tx.get("dex"),
                         )
                         self.db.add(trade)
+                        self.db.flush()  # Flush to make trade visible to subsequent queries
 
                 except Exception as e:
                     logger.error(f"Error processing transaction: {str(e)}")

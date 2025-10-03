@@ -71,11 +71,13 @@ async def stats_rollup_job() -> None:
                 )
 
                 if stats:
+                    from datetime import datetime
+
                     stats.realized_pnl_usd = pnl_data["realized_pnl"]
                     stats.unrealized_pnl_usd = pnl_data["unrealized_pnl"]
                     stats.best_trade_multiple = best_multiple
                     stats.earlyscore_median = median_early
-                    stats.last_update = asyncio.get_event_loop().time()
+                    stats.last_update = datetime.utcnow()
                 else:
                     from src.db.models import Trade
                     from datetime import datetime, timedelta

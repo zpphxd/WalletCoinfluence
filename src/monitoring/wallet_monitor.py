@@ -51,24 +51,29 @@ class WalletMonitor:
                     new_trades = await self._check_wallet_for_new_trades(wallet)
 
                     for trade in new_trades:
-                        # Check confluence
-                        is_confluence = await self.confluence.check_confluence(
+                        # Record this buy in confluence tracker
+                        self.confluence.record_buy(
                             trade["token_address"],
                             trade["chain_id"],
                             wallet.address,
+                            {
+                                "price_usd": trade.get("price_usd", 0),
+                                "value_usd": trade.get("value_usd", 0),
+                                "tx_hash": trade.get("tx_hash"),
+                            }
                         )
 
-                        if is_confluence:
-                            # Get all wallets in confluence
-                            confluence_wallets = (
-                                await self.confluence.get_confluence_wallets(
-                                    trade["token_address"], trade["chain_id"]
-                                )
-                            )
+                        # Check if this creates confluence (≥2 wallets)
+                        confluence_events = self.confluence.check_confluence(
+                            trade["token_address"],
+                            trade["chain_id"],
+                            min_wallets=2
+                        )
 
-                            # Send confluence alert
+                        if confluence_events:
+                            # Send confluence alert with all participating wallets
                             await self._send_confluence_alert(
-                                trade, confluence_wallets
+                                trade, confluence_events
                             )
                             alerts_sent += 1
 
@@ -219,24 +224,20 @@ class WalletMonitor:
             )
 
             # Build alert message
-            message = f"""🔔 TOP WALLET BUY
-
-Token: {token.symbol if token else 'Unknown'} (${trade['price_usd']:.8f})
-Wallet: {wallet.address[:10]}...
-
-30D PnL: ${stats.realized_pnl_usd:,.0f} | Best: {stats.best_trade_multiple:.1f}x
-EarlyScore: {stats.earlyscore_median or 0:.0f}
-Trades: {stats.trades_count}
-
-Amount: {trade['amount']:,.2f} tokens
-Value: ${trade['value_usd']:,.2f}
-DEX: {trade['dex']}
-
-TX: {self._get_explorer_link(trade['chain_id'], trade['tx_hash'])}
-"""
-
             # Send via Telegram
-            await self.telegram.send_message(message)
+            alert_data = {
+                "token_symbol": token.symbol if token else "Unknown",
+                "token_address": trade["token_address"],
+                "wallet_address": wallet.address,
+                "chain_id": trade["chain_id"],
+                "price_usd": trade.get("price_usd", 0),
+                "pnl_30d_usd": (stats.realized_pnl_usd + stats.unrealized_pnl_usd) if stats else 0,
+                "best_trade_multiple": stats.best_trade_multiple if stats else 0,
+                "earlyscore": stats.earlyscore_median if stats else 0,
+                "tx_hash": trade.get("tx_hash", ""),
+                "dex": trade.get("dex", ""),
+            }
+            await self.telegram.send_single_wallet_alert(alert_data)
 
             # Log alert
             alert = Alert(
@@ -258,13 +259,13 @@ TX: {self._get_explorer_link(trade['chain_id'], trade['tx_hash'])}
             logger.error(f"Error sending single alert: {str(e)}")
 
     async def _send_confluence_alert(
-        self, trade: Dict[str, Any], wallets: List[str]
+        self, trade: Dict[str, Any], confluence_events: List[Dict[str, Any]]
     ) -> None:
         """Send alert for confluence (multiple wallets buying).
 
         Args:
             trade: Trade data
-            wallets: List of wallet addresses in confluence
+            confluence_events: List of event dicts from confluence detector
         """
         try:
             # Get token data
@@ -276,47 +277,43 @@ TX: {self._get_explorer_link(trade['chain_id'], trade['tx_hash'])}
                 .first()
             )
 
+            # Extract wallet addresses from events
+            wallet_addrs = [event.get("wallet") for event in confluence_events]
+
             # Get stats for all wallets
-            wallet_stats = []
-            for wallet_addr in wallets:
+            wallet_stats_list = []
+            for wallet_addr in wallet_addrs:
                 stats = (
                     self.db.query(WalletStats30D)
                     .filter(WalletStats30D.wallet_address == wallet_addr)
                     .first()
                 )
                 if stats:
-                    wallet_stats.append(stats)
+                    wallet_stats_list.append({
+                        "address": wallet_addr,
+                        "pnl_30d": stats.realized_pnl_usd + stats.unrealized_pnl_usd,
+                        "best_multiple": stats.best_trade_multiple,
+                        "earlyscore": stats.earlyscore_median,
+                    })
 
             avg_pnl = (
-                sum(s.realized_pnl_usd for s in wallet_stats) / len(wallet_stats)
-                if wallet_stats
+                sum(w["pnl_30d"] for w in wallet_stats_list) / len(wallet_stats_list)
+                if wallet_stats_list
                 else 0
             )
 
-            # Build alert message
-            message = f"""🚨 CONFLUENCE ({len(wallets)} wallets) 🚨
-
-Token: {token.symbol if token else 'Unknown'} (${trade['price_usd']:.8f})
-
-Wallets:
-"""
-
-            for i, wallet_addr in enumerate(wallets[:5]):  # Show max 5
-                stats = next(
-                    (s for s in wallet_stats if s.wallet_address == wallet_addr), None
-                )
-                if stats:
-                    message += f"- {wallet_addr[:10]}... | 30D: ${stats.realized_pnl_usd:,.0f} | Best: {stats.best_trade_multiple:.1f}x\n"
-
-            message += f"""
-Avg 30D PnL: ${avg_pnl:,.0f}
-Window: {settings.confluence_minutes} min
-
-TX: {self._get_explorer_link(trade['chain_id'], trade['tx_hash'])}
-"""
-
             # Send via Telegram
-            await self.telegram.send_message(message)
+            alert_data = {
+                "token_symbol": token.symbol if token else "Unknown",
+                "token_address": trade["token_address"],
+                "chain_id": trade["chain_id"],
+                "price_usd": trade.get("price_usd", 0),
+                "wallets": wallet_stats_list,
+                "avg_pnl_30d": avg_pnl,
+                "window_minutes": settings.confluence_minutes,
+                "liquidity_usd": 0,  # TODO: fetch from DexScreener
+            }
+            await self.telegram.send_confluence_alert(alert_data)
 
             # Log alert
             import json
