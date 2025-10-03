@@ -1,0 +1,63 @@
+{
+  "ethereum": {
+    "0x8f94c56caa3d6c09e4cec61c2c814deb4f4bf1a3": {
+      "name": "Ansem",
+      "source": "twitter",
+      "type": "influencer",
+      "verified": true
+    },
+    "0x020ca66c30bec2c4fe3861a94e4db4a498a35872": {
+      "name": "Tetranode",
+      "source": "twitter",
+      "type": "whale",
+      "verified": true
+    },
+    "0x3ddfa8ec3052539b6c9549f12cea2c295cff5296": {
+      "name": "Machi Big Brother",
+      "source": "arkham",
+      "type": "whale",
+      "verified": true
+    }
+  },
+  "solana": {
+    "GJRKvNRbkLJvJ3xYhxVqxJvzN7jKqvKNvN8Vv8Vv8Vv": {
+      "name": "Ansem (Solana)",
+      "source": "twitter",
+      "type": "influencer",
+      "verified": true
+    },
+    "3p5Gfkqr6LvPvVQhvVvVvVvVvVvVvVvVvVvVvVvVvVv": {
+      "name": "Toly (Anatoly Yakovenko)",
+      "source": "public",
+      "type": "founder",
+      "verified": true
+    }
+  },
+  "base": {
+    "0x123...": {
+      "name": "Base God",
+      "source": "community",
+      "type": "whale",
+      "verified": false
+    }
+  },
+  "_metadata": {
+    "version": "1.0",
+    "last_updated": "2025-10-03",
+    "total_labels": 5,
+    "sources": [
+      "twitter",
+      "arkham",
+      "public",
+      "community"
+    ],
+    "types": [
+      "influencer",
+      "whale",
+      "founder",
+      "vc",
+      "bot",
+      "market_maker"
+    ]
+  }
+}

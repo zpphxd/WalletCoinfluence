@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Wallet Signal" />
+  <meta name="dcterms.date" content="2025-01-01" />
+  <title>Alpha Wallet Scout</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Alpha Wallet Scout</h1>
+<p class="subtitle">AI-Powered Crypto Trading Intelligence</p>
+<p class="author">Wallet Signal</p>
+<p class="date">2025</p>
+</header>
+<h1 id="executive-summary">Executive Summary</h1>
+<p><strong>Alpha Wallet Scout</strong> is a self-improving trading
+intelligence system that discovers high-performing on-chain traders and
+alerts users to their moves in real-time.</p>
+<h2 id="the-opportunity">The Opportunity</h2>
+<ul>
+<li><strong>$2.4T+ crypto market</strong> with millions of daily
+traders</li>
+<li><strong>Retail traders lose 90%+</strong> of the time due to
+information asymmetry</li>
+<li><strong>Smart money wins consistently</strong> - following them is
+the edge</li>
+<li><strong>No existing solution</strong> offers automated wallet
+discovery + AI validation + multi-chain support at $0 cost</li>
+</ul>
+<h2 id="our-solution">Our Solution</h2>
+<p>A fully automated system that:</p>
+<ol type="1">
+<li><strong>Discovers</strong> top-performing wallets from trending
+tokens across 9 data sources</li>
+<li><strong>Analyzes</strong> 30-day performance using FIFO PnL and
+proprietary “Being-Early” scoring</li>
+<li><strong>Monitors</strong> high-signal wallets in real-time across
+Ethereum, Solana, Base, Arbitrum</li>
+<li><strong>Alerts</strong> via Telegram with on-demand AI validation
+(Phi-3 LLM)</li>
+<li><strong>Tracks</strong> alert outcomes to measure real-world
+performance</li>
+</ol>
+<h2 id="key-metrics">Key Metrics</h2>
+<table>
+<colgroup>
+<col style="width: 53%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Monthly Operating Cost</strong></td>
+<td>$0-20 (all free APIs + local AI)</td>
+</tr>
+<tr>
+<td><strong>Alert Latency</strong></td>
+<td>&lt;5 seconds from trade to notification</td>
+</tr>
+<tr>
+<td><strong>Data Sources</strong></td>
+<td>9 free APIs (DEX Screener, Pump.fun, GMGN, etc.)</td>
+</tr>
+<tr>
+<td><strong>Chains Supported</strong></td>
+<td>4 (Ethereum, Base, Arbitrum, Solana)</td>
+</tr>
+<tr>
+<td><strong>API Cost Reduction</strong></td>
+<td>90% via Redis caching</td>
+</tr>
+<tr>
+<td><strong>AI Activation Rate</strong></td>
+<td>5-10% (on-demand for high-probability signals only)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="competitive-advantage">Competitive Advantage</h2>
+<ul>
+<li>✅ <strong>100% free infrastructure</strong> (vs competitors
+charging $50-500/mo)</li>
+<li>✅ <strong>Local AI</strong> (Ollama/Phi-3) with on-demand
+activation</li>
+<li>✅ <strong>Self-improving watchlist</strong> (auto-add/remove based
+on performance)</li>
+<li>✅ <strong>Multi-chain from day 1</strong> (most competitors are
+single-chain)</li>
+<li>✅ <strong>Outcome tracking</strong> (measure alert performance, not
+just send alerts)</li>
+<li>✅ <strong>Open source</strong> (transparency, community
+contributions, enterprise licensing)</li>
+</ul>
+<h1 id="the-problem">The Problem</h1>
+<h2 id="information-asymmetry-in-crypto-markets">Information Asymmetry
+in Crypto Markets</h2>
+<p><strong>Retail traders are always late:</strong></p>
+<ol type="1">
+<li>Token launches → Smart money buys → Price pumps → Retail hears about
+it → Smart money exits → Retail buys the top</li>
+<li>By the time a token trends on Twitter/Discord, early buyers have
+already 5-10x’d</li>
+<li><strong>Result</strong>: Retail consistently loses money while smart
+wallets compound gains</li>
+</ol>
+<h2 id="current-solutions-are-inadequate">Current Solutions Are
+Inadequate</h2>
+<h3 id="manual-wallet-tracking">Manual Wallet Tracking</h3>
+<ul>
+<li>Time-consuming to find good wallets</li>
+<li>No systematic performance analysis</li>
+<li>Miss trades when not watching</li>
+</ul>
+<h3 id="paid-alert-services-50-500mo">Paid Alert Services
+($50-500/mo)</h3>
+<ul>
+<li>Curated by humans (slow, biased)</li>
+<li>Black box scoring (no transparency)</li>
+<li>Single-chain only (miss opportunities)</li>
+<li>No outcome tracking (can’t verify if alerts work)</li>
+</ul>
+<h3 id="social-media-alpha">Social Media Alpha</h3>
+<ul>
+<li>Low signal-to-noise ratio</li>
+<li>Conflicting opinions</li>
+<li>Often shilling bags</li>
+<li>No accountability</li>
+</ul>
+<h2 id="the-core-insight">The Core Insight</h2>
+<p><strong>Stop analyzing tokens. Start following wallets that
+consistently win.</strong></p>
+<p>If someone turned $10k → $500k last month by buying tokens early, you
+want to know what they’re buying <strong>right now</strong>.</p>
+<h1 id="our-solution-1">Our Solution</h1>
+<h2 id="system-architecture">System Architecture</h2>
+<pre><code>┌─────────────────────────────────────────────┐
+│  9 FREE Data Sources (DEX Screener, etc.)   │
+│  Cached 15min in Redis → 90% fewer calls    │
+└──────────────┬──────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────────────┐
+│  Token Discovery Engine (Every 15 min)       │
+│  - Trending tokens across all chains         │
+│  - NEW pools (Defined.fi catches earliest)   │
+│  - Scam/honeypot filtering                   │
+└──────────────┬───────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────────────┐
+│  Wallet Discovery (Every 15 min)             │
+│  - Fetch 24-72h buyers for each token        │
+│  - Check wallet labels (Ansem, Tetranode...) │
+│  - Filter bots, contracts, MEV               │
+│  - Queue for 30-day backfill                 │
+└──────────────┬───────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────────────┐
+│  Analytics Engine (Hourly)                   │
+│  - FIFO PnL calculation                      │
+│  - Being-Early Score (0-100)                 │
+│  - 30-day performance stats                  │
+└──────────────┬───────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────────────┐
+│  Watchlist Curator (Nightly)                 │
+│  - Auto-add: ≥$50k PnL, ≥3x best trade       │
+│  - Auto-remove: Negative PnL, &gt;50% drawdown  │
+│  - Result: 20-100 high-signal wallets        │
+└──────────────┬───────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────────────┐
+│  Real-Time Monitor (Webhooks + 30s polling)  │
+│  - Detect watchlist wallet trades            │
+│  - Confluence detection (≥2 wallets)         │
+│  - Preliminary scoring (0-100)               │
+└──────────────┬───────────────────────────────┘
+               │
+    ┌──────────┴──────────┐
+    ▼                     ▼
+┌──────────┐      ┌──────────────────────────┐
+│  AI      │      │  Telegram Alert          │
+│  Phi-3   │─────▶│  - Wallet names/labels   │
+│  (local) │      │  - Explorer links        │
+│          │      │  - AI confidence score   │
+└──────────┘      │  - Recommendation        │
+  ↑               └──────────────────────────┘
+  │
+  └─ Activates ONLY for:
+     • Preliminary score ≥75
+     • Confluence (≥2 wallets)
+     • Labeled wallet detected</code></pre>
+<h2 id="key-innovations">Key Innovations</h2>
+<h3 id="on-demand-ai-not-always-on">1. On-Demand AI (Not Always-On)</h3>
+<p><strong>Problem</strong>: Running AI on every signal is expensive and
+slow.</p>
+<p><strong>Our Solution</strong>: Smart activation logic</p>
+<ul>
+<li>Calculate <strong>preliminary score</strong> using traditional
+metrics (fast, free)</li>
+<li>LLM activates <strong>only if</strong>:
+<ul>
+<li>Preliminary score ≥75/100 <strong>OR</strong></li>
+<li>Multiple wallets buying (confluence) <strong>OR</strong></li>
+<li>Known labeled wallet involved <strong>OR</strong></li>
+<li>Preliminary score ≥85 (high confidence)</li>
+</ul></li>
+</ul>
+<p><strong>Result</strong>: - 90-95% of signals never trigger LLM (low
+scores filtered out) - High-probability signals get AI validation in
+&lt;2 seconds - <strong>95% cost reduction</strong> vs always-on AI -
+Completely free with local Ollama/Phi-3</p>
+<h3 id="being-early-metric-proprietary">2. Being-Early Metric
+(Proprietary)</h3>
+<p>Most systems only look at PnL. We score <strong>timing</strong>.</p>
+<pre><code>Being-Early Score (0-100) =
+    40 × (1 - buy_rank_percentile)          # How early they bought
+  + 40 × clip((1M - market_cap) / 1M)       # How low the MC was
+  + 20 × volume_participation               # How big their buy was</code></pre>
+<p><strong>Why this matters</strong>: - A wallet that makes $100k buying
+at $50k MC is <strong>better</strong> than one making $100k at $5M MC -
+Early buyers have edge (alpha, research, insider info) - High
+Being-Early scores identify <strong>true alpha finders</strong></p>
+<p><strong>Example</strong>: - Wallet buys at rank #5 out of 500 buyers
+→ <code>rank_score = 39.6</code> - Market cap at buy: $200k →
+<code>mc_score = 32</code> - Buy size: 2% of volume →
+<code>size_score = 10</code> - <strong>Total: 81.6/100</strong> ✨
+(Exceptional timing)</p>
+<h3 id="multi-source-aggregation">3. Multi-Source Aggregation</h3>
+<p><strong>9 free data sources</strong> working together:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Specialty</th>
+<th>Latency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Defined.fi</strong></td>
+<td>NEW pools (catches earliest)</td>
+<td>Minutes</td>
+</tr>
+<tr>
+<td><strong>Pump.fun</strong></td>
+<td>Solana memecoin launches</td>
+<td>Real-time</td>
+</tr>
+<tr>
+<td><strong>GMGN</strong></td>
+<td>Solana smart money labels</td>
+<td>Real-time</td>
+</tr>
+<tr>
+<td><strong>DEX Screener</strong></td>
+<td>Cross-chain trending</td>
+<td>5-15 min</td>
+</tr>
+<tr>
+<td><strong>Dextools</strong></td>
+<td>Hot pairs</td>
+<td>5-15 min</td>
+</tr>
+<tr>
+<td><strong>GeckoTerminal</strong></td>
+<td>Multi-DEX trending</td>
+<td>10-30 min</td>
+</tr>
+<tr>
+<td><strong>CoinGecko</strong></td>
+<td>Established trending</td>
+<td>30-60 min</td>
+</tr>
+<tr>
+<td><strong>Jupiter</strong></td>
+<td>Solana DEX aggregator</td>
+<td>Real-time</td>
+</tr>
+<tr>
+<td><strong>Birdeye</strong></td>
+<td>Solana analytics</td>
+<td>Real-time</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why multiple sources</strong>: - Different sources catch
+tokens at different lifecycle stages - Defined.fi catches tokens
+<strong>minutes</strong> after launch - GeckoTerminal catches tokens
+after initial pump (confirmation) - Together: comprehensive coverage
+from launch → maturity</p>
+<h3 id="wallet-labels-database">4. Wallet Labels Database</h3>
+<p>Pre-loaded with known traders: - <strong>Ansem</strong> (Ethereum
+influencer, proven track record) - <strong>Tetranode</strong> (Legendary
+ETH whale) - <strong>Other verified traders</strong> from Twitter,
+Discord, on-chain analysis</p>
+<p><strong>User-extensible</strong>: - Add your own wallets to track -
+Tag wallets you discover - System gives labeled wallets priority in
+scoring</p>
+<h3 id="outcome-tracking-accountability">5. Outcome Tracking
+(Accountability)</h3>
+<p>Most alert services send alerts but never check if they worked.</p>
+<p><strong>We track</strong>: - Token price 1h, 6h, 24h after alert -
+Win rate (% of alerts that went up) - Average return per alert -
+Best/worst performers</p>
+<p><strong>Daily summary example</strong>:</p>
+<pre><code>📊 Yesterday&#39;s Performance
+Alerts sent: 7
+Profitable: 5 (71% win rate)
+Average return: +23%
+Best performer: PEPE +127% (24h)</code></pre>
+<h1 id="business-model">Business Model</h1>
+<h2 id="current-open-source">Current: Open Source</h2>
+<p><strong>Status</strong>: Fully open-source (MIT license)</p>
+<p><strong>Benefits</strong>: - Community contributions (new data
+sources, chains, features) - Transparency builds trust - Attract
+developer talent - Viral growth via GitHub</p>
+<h2 id="revenue-streams-future">Revenue Streams (Future)</h2>
+<h3 id="premium-hosted-service-29-99mo">1. Premium Hosted Service
+($29-99/mo)</h3>
+<ul>
+<li>Fully managed cloud deployment</li>
+<li>24/7 monitoring and alerts</li>
+<li>Priority support</li>
+<li>Custom webhook integrations</li>
+<li>Target: Retail traders who want zero setup</li>
+</ul>
+<h3 id="enterprise-api-499-2999mo">2. Enterprise API
+($499-2,999/mo)</h3>
+<ul>
+<li>REST API access to all data</li>
+<li>Real-time websocket feeds</li>
+<li>Custom watchlist management</li>
+<li>SLA guarantees</li>
+<li>Target: Trading firms, hedge funds, analytics platforms</li>
+</ul>
+<h3 id="white-label-licensing-5k-50k-one-time">3. White-Label Licensing
+($5k-50k one-time)</h3>
+<ul>
+<li>Deploy under your own brand</li>
+<li>Custom UI/branding</li>
+<li>On-premise deployment option</li>
+<li>Target: Crypto media companies, trading communities, Discord
+servers</li>
+</ul>
+<h3 id="advanced-features-freemium-add-ons">4. Advanced Features
+(Freemium Add-Ons)</h3>
+<ul>
+<li><strong>Copy Trading</strong> ($49/mo): Auto-execute trades when
+wallets buy</li>
+<li><strong>Web Dashboard</strong> ($19/mo): Visual analytics,
+backtesting</li>
+<li><strong>Discord Bot</strong> ($29/mo): Alerts in Discord
+servers</li>
+<li><strong>Twitter Monitoring</strong> ($39/mo): Track trader tweets +
+on-chain correlation</li>
+</ul>
+<h2 id="market-sizing">Market Sizing</h2>
+<p><strong>TAM</strong> (Total Addressable Market): - 420M+ crypto users
+globally (2024) - 50M+ active monthly traders - Target: 1% penetration =
+<strong>500k users</strong></p>
+<p><strong>SAM</strong> (Serviceable Addressable Market): -
+English-speaking traders with $1k+ portfolios: ~10M - Target: 5%
+penetration = <strong>500k users</strong></p>
+<p><strong>SOM</strong> (Serviceable Obtainable Market - Year 3): -
+Conservative: 10k free users, 1k paid users - Revenue: 1k users × $50
+avg/mo = <strong>$50k MRR = $600k ARR</strong></p>
+<h2 id="unit-economics-premium-tier">Unit Economics (Premium Tier)</h2>
+<p><strong>Assumptions</strong>: - Price: $49/mo - Server cost per user:
+$2/mo (shared VPS, caching) - Gross margin: <strong>96%</strong></p>
+<p><strong>Customer Lifetime Value</strong> (conservative): - Avg
+subscription: 8 months - Churn: 12.5%/mo - LTV: $49 × 8 =
+<strong>$392</strong></p>
+<p><strong>Customer Acquisition Cost</strong>: - Content marketing +
+SEO: $20/customer - Paid ads: $50/customer - Blended:
+<strong>$30/customer</strong></p>
+<p><strong>LTV:CAC Ratio</strong>: 392/30 = <strong>13:1</strong>
+(excellent)</p>
+<h1 id="competitive-landscape">Competitive Landscape</h1>
+<h2 id="direct-competitors">Direct Competitors</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 11%" />
+<col style="width: 12%" />
+<col style="width: 7%" />
+<col style="width: 20%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr>
+<th>Competitor</th>
+<th>Price</th>
+<th>Chains</th>
+<th>AI</th>
+<th>Open Source</th>
+<th>Outcome Tracking</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Nansen</strong></td>
+<td>$150/mo</td>
+<td>10+</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Arkham</strong></td>
+<td>$50/mo</td>
+<td>5</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Breadcrumbs</strong></td>
+<td>$99/mo</td>
+<td>3</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>DeBank</strong></td>
+<td>Free*</td>
+<td>20+</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Alpha Wallet Scout</strong></td>
+<td><strong>$0-20</strong></td>
+<td><strong>4</strong></td>
+<td><strong>✅</strong></td>
+<td><strong>✅</strong></td>
+<td><strong>✅</strong></td>
+</tr>
+</tbody>
+</table>
+<p>*DeBank is free for viewing, but alerts/API require $49/mo</p>
+<h2 id="our-advantages">Our Advantages</h2>
+<h3 id="cost-structure">1. Cost Structure</h3>
+<ul>
+<li><strong>Competitors</strong>: Paid APIs, cloud AI, managed
+infrastructure → $50-150/mo</li>
+<li><strong>Us</strong>: Free APIs, local AI, self-hosted →
+$0-20/mo</li>
+<li><strong>Advantage</strong>: 75-100% cost reduction → accessible to
+retail</li>
+</ul>
+<h3 id="ai-integration">2. AI Integration</h3>
+<ul>
+<li><strong>Competitors</strong>: Static scoring, no AI validation</li>
+<li><strong>Us</strong>: On-demand Phi-3 LLM with optimized prompts</li>
+<li><strong>Advantage</strong>: Higher signal quality, automated
+reasoning</li>
+</ul>
+<h3 id="transparency">3. Transparency</h3>
+<ul>
+<li><strong>Competitors</strong>: Black box algorithms, proprietary
+scoring</li>
+<li><strong>Us</strong>: Open source, documented metrics, outcome
+tracking</li>
+<li><strong>Advantage</strong>: Trust, community contributions,
+auditability</li>
+</ul>
+<h3 id="extensibility">4. Extensibility</h3>
+<ul>
+<li><strong>Competitors</strong>: Locked ecosystems, limited
+customization</li>
+<li><strong>Us</strong>: Add your own data sources, filters, LLMs</li>
+<li><strong>Advantage</strong>: Power users can customize, developers
+can contribute</li>
+</ul>
+<h2 id="barriers-to-entry">Barriers to Entry</h2>
+<h3 id="technical-moats">Technical Moats</h3>
+<ol type="1">
+<li><strong>Multi-source aggregation logic</strong>: 9 APIs working
+together requires complex deduplication and normalization</li>
+<li><strong>FIFO PnL calculation</strong>: Handling cross-chain,
+multi-wallet, multi-token accounting is non-trivial</li>
+<li><strong>On-demand AI</strong>: Smart activation logic + prompt
+engineering took significant R&amp;D</li>
+<li><strong>Caching architecture</strong>: 90% API reduction requires
+sophisticated Redis patterns</li>
+</ol>
+<h3 id="network-effects">Network Effects</h3>
+<ol type="1">
+<li><strong>Wallet labels database</strong>: Grows with community
+contributions (more users = more labeled wallets)</li>
+<li><strong>Outcome data</strong>: More alerts = more performance data =
+better scoring</li>
+<li><strong>GitHub stars/forks</strong>: Open source → viral growth →
+community → contributors</li>
+</ol>
+<h3 id="operational-moats">Operational Moats</h3>
+<ol type="1">
+<li><strong>Free tier partnerships</strong>: Established relationships
+with Alchemy, Helius, etc.</li>
+<li><strong>API expertise</strong>: Deep knowledge of 9+ different APIs
+and their quirks</li>
+<li><strong>Community trust</strong>: First-mover advantage in
+open-source crypto intelligence</li>
+</ol>
+<h1 id="technology-stack">Technology Stack</h1>
+<h2 id="infrastructure">Infrastructure</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Technology</th>
+<th>Cost</th>
+<th>Scalability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Database</strong></td>
+<td>PostgreSQL 15</td>
+<td>$0 (Docker)</td>
+<td>Millions of trades</td>
+</tr>
+<tr>
+<td><strong>Cache</strong></td>
+<td>Redis 7</td>
+<td>$0 (Docker)</td>
+<td>Millions of keys</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>FastAPI (Python)</td>
+<td>$0 (self-hosted)</td>
+<td>10k req/sec</td>
+</tr>
+<tr>
+<td><strong>Worker</strong></td>
+<td>APScheduler</td>
+<td>$0 (self-hosted)</td>
+<td>Parallel jobs</td>
+</tr>
+<tr>
+<td><strong>AI</strong></td>
+<td>Ollama + Phi-3</td>
+<td>$0 (local CPU/GPU)</td>
+<td>Unlimited</td>
+</tr>
+<tr>
+<td><strong>Hosting</strong></td>
+<td>VPS/Cloud</td>
+<td>$5-20/mo</td>
+<td>Horizontal scaling</td>
+</tr>
+</tbody>
+</table>
+<h2 id="external-dependencies">External Dependencies</h2>
+<h3 id="blockchain-data-free-tiers">Blockchain Data (Free Tiers)</h3>
+<ul>
+<li><strong>Alchemy</strong>: 300M compute units/mo = ~10M requests</li>
+<li><strong>Helius</strong>: 100k requests/mo for Solana</li>
+<li>Both provide webhooks for real-time monitoring</li>
+</ul>
+<h3 id="token-data-all-free">Token Data (All Free)</h3>
+<ul>
+<li>DEX Screener: Unlimited with rate limiting</li>
+<li>Pump.fun: Public API, no auth required</li>
+<li>GMGN: Free tier with caching</li>
+<li>Defined.fi: GraphQL, free tier</li>
+<li>GeckoTerminal: Free tier, generous limits</li>
+<li>Dextools: Free tier</li>
+<li>CoinGecko: Free tier</li>
+<li>Jupiter: Free tier (Solana)</li>
+<li>Birdeye: Optional, free tier available</li>
+</ul>
+<h3 id="alerts">Alerts</h3>
+<ul>
+<li><strong>Telegram</strong>: Unlimited messages, free forever</li>
+</ul>
+<h2 id="production-deployment">Production Deployment</h2>
+<p><strong>Current</strong>: Docker Compose (5 containers) - PostgreSQL,
+Redis, Ollama, API, Worker</p>
+<p><strong>Future Scale</strong>: Kubernetes - Horizontal scaling for
+API/Worker - Managed PostgreSQL (RDS/DigitalOcean) - Managed Redis
+(ElastiCache/DigitalOcean) - GPU nodes for faster LLM inference</p>
+<p><strong>Monitoring</strong>: - Health check endpoints - Structured
+logging (JSON) - Metrics collection ready (Prometheus)</p>
+<h1 id="go-to-market-strategy">Go-to-Market Strategy</h1>
+<h2 id="phase-1-community-building-months-1-3">Phase 1: Community
+Building (Months 1-3)</h2>
+<p><strong>Objective</strong>: 1,000 GitHub stars, 100 active users</p>
+<p><strong>Tactics</strong>: 1. <strong>Launch on Product Hunt</strong>
+- tech-savvy early adopters 2. <strong>Reddit marketing</strong> -
+r/CryptoTechnology, r/algotrading, r/CryptoCurrency 3. <strong>Twitter
+strategy</strong> - thread on “How I built a free Nansen alternative” 4.
+<strong>YouTube tutorials</strong> - “Setup Alpha Wallet Scout in 10
+minutes” 5. <strong>Blog content</strong> - “Following smart money: A
+systematic approach”</p>
+<p><strong>Budget</strong>: $0 (organic only)</p>
+<h2 id="phase-2-growth-months-4-6">Phase 2: Growth (Months 4-6)</h2>
+<p><strong>Objective</strong>: 5,000 stars, 500 active users, first paid
+customers</p>
+<p><strong>Tactics</strong>: 1. <strong>Launch premium hosted
+service</strong> - $49/mo, 1-click deploy 2. <strong>Content
+marketing</strong> - SEO-optimized guides, case studies 3.
+<strong>Partnerships</strong> - Integrate with existing crypto tools
+(Discord bots, Telegram groups) 4. <strong>Influencer outreach</strong>
+- Sponsor crypto YouTubers/podcasters 5. <strong>Paid ads</strong> -
+Twitter ads targeting crypto traders</p>
+<p><strong>Budget</strong>: $5k/mo (influencers $3k, ads $2k)</p>
+<h2 id="phase-3-scale-months-7-12">Phase 3: Scale (Months 7-12)</h2>
+<p><strong>Objective</strong>: 20,000 stars, 2,000 active users, $50k
+MRR</p>
+<p><strong>Tactics</strong>: 1. <strong>Enterprise sales</strong> -
+Reach out to trading firms, hedge funds 2. <strong>White-label
+licensing</strong> - Partner with crypto media companies 3.
+<strong>Advanced features</strong> - Copy trading, web dashboard 4.
+<strong>Conference presence</strong> - ETHDenver, Consensus, Token2049
+5. <strong>Paid growth channels</strong> - Google ads, crypto newsletter
+sponsorships</p>
+<p><strong>Budget</strong>: $20k/mo (ads $10k, conferences $5k, sales
+$5k)</p>
+<h2 id="distribution-channels">Distribution Channels</h2>
+<h3 id="organic-free">Organic (Free)</h3>
+<ul>
+<li>GitHub (primary)</li>
+<li>Twitter/X (crypto trading community)</li>
+<li>Reddit (r/CryptoCurrency, r/algotrading)</li>
+<li>YouTube (tutorial content)</li>
+<li>Medium/Substack (long-form content)</li>
+</ul>
+<h3 id="paid">Paid</h3>
+<ul>
+<li>Twitter ads (targeting crypto traders)</li>
+<li>Google ads (keywords: “crypto trading bot”, “wallet tracker”)</li>
+<li>Crypto newsletter sponsorships (The Defiant, Bankless)</li>
+<li>YouTube sponsorships (crypto trading channels)</li>
+<li>Conference sponsorships (ETHDenver, etc.)</li>
+</ul>
+<h3 id="partnerships">Partnerships</h3>
+<ul>
+<li>Integration with Discord bots (trading communities)</li>
+<li>Telegram group partnerships (alpha channels)</li>
+<li>API partnerships (other crypto analytics platforms)</li>
+<li>Exchange partnerships (Binance, Coinbase developer programs)</li>
+</ul>
+<h1 id="financial-projections">Financial Projections</h1>
+<h2 id="year-1-launch-validation">Year 1: Launch &amp; Validation</h2>
+<p><strong>Assumptions</strong>: - Launch: Month 1 - Premium service:
+Month 4 - Enterprise: Month 7</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Q1</th>
+<th>Q2</th>
+<th>Q3</th>
+<th>Q4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Users (Free)</strong></td>
+<td>100</td>
+<td>500</td>
+<td>1,500</td>
+<td>3,000</td>
+</tr>
+<tr>
+<td><strong>Users (Paid)</strong></td>
+<td>0</td>
+<td>10</td>
+<td>50</td>
+<td>200</td>
+</tr>
+<tr>
+<td><strong>MRR</strong></td>
+<td>$0</td>
+<td>$490</td>
+<td>$2,450</td>
+<td>$9,800</td>
+</tr>
+<tr>
+<td><strong>ARR</strong></td>
+<td>$0</td>
+<td>$5,880</td>
+<td>$29,400</td>
+<td>$117,600</td>
+</tr>
+<tr>
+<td><strong>Costs</strong></td>
+<td>$0</td>
+<td>$5k</td>
+<td>$10k</td>
+<td>$20k</td>
+</tr>
+<tr>
+<td><strong>Burn</strong></td>
+<td>$0</td>
+<td>-$4.5k</td>
+<td>-$7.5k</td>
+<td>-$10k</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cumulative Burn</strong>: -$22k (bootstrappable)</p>
+<h2 id="year-2-growth">Year 2: Growth</h2>
+<p><strong>Assumptions</strong>: - Paid conversion rate: 5%
+(conservative) - Enterprise deals: 2 @ $999/mo</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Q1</th>
+<th>Q2</th>
+<th>Q3</th>
+<th>Q4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Users (Free)</strong></td>
+<td>5,000</td>
+<td>8,000</td>
+<td>12,000</td>
+<td>20,000</td>
+</tr>
+<tr>
+<td><strong>Users (Paid)</strong></td>
+<td>350</td>
+<td>550</td>
+<td>800</td>
+<td>1,200</td>
+</tr>
+<tr>
+<td><strong>Enterprise</strong></td>
+<td>2</td>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+</tr>
+<tr>
+<td><strong>MRR</strong></td>
+<td>$19k</td>
+<td>$31k</td>
+<td>$43k</td>
+<td>$64k</td>
+</tr>
+<tr>
+<td><strong>ARR</strong></td>
+<td>$228k</td>
+<td>$372k</td>
+<td>$516k</td>
+<td>$768k</td>
+</tr>
+<tr>
+<td><strong>Costs</strong></td>
+<td>$25k</td>
+<td>$30k</td>
+<td>$40k</td>
+<td>$50k</td>
+</tr>
+<tr>
+<td><strong>Profit/Loss</strong></td>
+<td>-$6k</td>
+<td>+$1k</td>
+<td>+$3k</td>
+<td>+$14k</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cumulative</strong>: Profitable by Q2 Y2</p>
+<h2 id="year-3-scale">Year 3: Scale</h2>
+<p><strong>Assumptions</strong>: - Paid conversion: 7% (improving) -
+Enterprise: 10 @ $1,499/mo avg - White-label: 3 @ $20k one-time</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Q1</th>
+<th>Q2</th>
+<th>Q3</th>
+<th>Q4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Users (Free)</strong></td>
+<td>30k</td>
+<td>45k</td>
+<td>60k</td>
+<td>80k</td>
+</tr>
+<tr>
+<td><strong>Users (Paid)</strong></td>
+<td>1,800</td>
+<td>2,700</td>
+<td>3,600</td>
+<td>4,800</td>
+</tr>
+<tr>
+<td><strong>Enterprise</strong></td>
+<td>8</td>
+<td>10</td>
+<td>12</td>
+<td>15</td>
+</tr>
+<tr>
+<td><strong>MRR</strong></td>
+<td>$100k</td>
+<td>$147k</td>
+<td>$194k</td>
+<td>$252k</td>
+</tr>
+<tr>
+<td><strong>ARR</strong></td>
+<td>$1.2M</td>
+<td>$1.76M</td>
+<td>$2.33M</td>
+<td>$3.02M</td>
+</tr>
+<tr>
+<td><strong>Costs</strong></td>
+<td>$60k</td>
+<td>$75k</td>
+<td>$90k</td>
+<td>$110k</td>
+</tr>
+<tr>
+<td><strong>Profit/Loss</strong></td>
+<td>+$40k</td>
+<td>+$72k</td>
+<td>+$104k</td>
+<td>+$142k</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cumulative Year 3 Profit</strong>: $358k</p>
+<h2 id="revenue-breakdown-year-3">Revenue Breakdown (Year 3)</h2>
+<ul>
+<li><strong>Premium subscriptions</strong>: 4,800 × $49 × 12 =
+<strong>$2.82M</strong> (93%)</li>
+<li><strong>Enterprise API</strong>: 15 × $1,499 × 12 =
+<strong>$270k</strong> (9%)</li>
+<li><strong>White-label</strong>: 3 × $20k = <strong>$60k</strong>
+(2%)</li>
+<li><strong>Total ARR</strong>: <strong>$3.15M</strong></li>
+</ul>
+<h1 id="funding-use-of-funds">Funding &amp; Use of Funds</h1>
+<h2 id="current-status-bootstrapped">Current Status: Bootstrapped</h2>
+<ul>
+<li><strong>Investment to date</strong>: $0 (built by founders)</li>
+<li><strong>MRR</strong>: $0 (pre-revenue)</li>
+<li><strong>Runway</strong>: Infinite (no burn)</li>
+</ul>
+<h2 id="funding-ask-100k-seed-optional">Funding Ask: $100k Seed
+(Optional)</h2>
+<p><strong>Use of Funds</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 29%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Category</th>
+<th>Amount</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Marketing</strong></td>
+<td>$40k</td>
+<td>Influencer partnerships, paid ads, conference presence</td>
+</tr>
+<tr>
+<td><strong>Product</strong></td>
+<td>$30k</td>
+<td>Web dashboard, mobile app, advanced features</td>
+</tr>
+<tr>
+<td><strong>Infrastructure</strong></td>
+<td>$10k</td>
+<td>Managed hosting, GPU nodes for faster AI</td>
+</tr>
+<tr>
+<td><strong>Legal</strong></td>
+<td>$10k</td>
+<td>Entity formation, terms of service, privacy policy</td>
+</tr>
+<tr>
+<td><strong>Operations</strong></td>
+<td>$10k</td>
+<td>Tools, subscriptions, misc expenses</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Timeline</strong>: 12 months to $50k MRR (500 paid users)</p>
+<p><strong>Valuation</strong>: $1M pre-money (10x annual revenue at end
+of period)</p>
+<h2 id="alternative-revenue-based-financing">Alternative: Revenue-Based
+Financing</h2>
+<p>If we achieve $10k MRR (Month 6), raise $50k RBF: -
+<strong>Terms</strong>: 1.5x cap, 10% of monthly revenue -
+<strong>Use</strong>: Accelerate paid growth channels -
+<strong>Payback</strong>: 15 months at $10k MRR</p>
+<h2 id="no-funding-path-default">No-Funding Path (Default)</h2>
+<p>Continue bootstrapping: - Organic growth only (no paid marketing) -
+Slower but sustainable - Maintain full equity and control - Reach
+profitability by Month 9-12</p>
+<h1 id="team-advisors">Team &amp; Advisors</h1>
+<h2 id="current-team">Current Team</h2>
+<p><strong>Founders</strong>: (To be filled in with your team
+details)</p>
+<h3 id="roles-needed-year-1">Roles Needed (Year 1)</h3>
+<p><strong>Full-Time</strong>: 1. <strong>CTO/Lead Engineer</strong> -
+Maintain infrastructure, add features 2. <strong>Growth
+Marketer</strong> - Content, SEO, paid acquisition 3. <strong>Community
+Manager</strong> - Discord, Telegram, GitHub support</p>
+<p><strong>Part-Time/Contract</strong>: 1. <strong>Designer</strong> -
+Web dashboard, marketing materials 2. <strong>Content Creator</strong> -
+YouTube tutorials, blog posts 3. <strong>DevRel</strong> - GitHub
+community, open-source contributions</p>
+<h2 id="advisory-board-target">Advisory Board (Target)</h2>
+<p><strong>Ideal Advisors</strong>: 1. <strong>Crypto Trading
+Expert</strong> - Validate product, network into trading communities 2.
+<strong>Open Source Veteran</strong> - Growth strategies for developer
+tools 3. <strong>Enterprise Sales</strong> - B2B sales to trading firms,
+hedge funds 4. <strong>AI/ML Engineer</strong> - Optimize LLM
+performance, explore new models</p>
+<p><strong>Compensation</strong>: 0.25-0.5% equity, 2-year vest</p>
+<h1 id="risks-mitigation">Risks &amp; Mitigation</h1>
+<h2 id="technical-risks">Technical Risks</h2>
+<h3 id="api-rate-limits-changes">1. API Rate Limits / Changes</h3>
+<p><strong>Risk</strong>: Free API tiers get reduced or removed</p>
+<p><strong>Mitigation</strong>: - 9 different sources (no single point
+of failure) - Aggressive caching (90% reduction) - Build relationships
+with providers - Fallback to paid tiers if necessary (still
+&lt;$50/mo)</p>
+<p><strong>Likelihood</strong>: Low | <strong>Impact</strong>:
+Medium</p>
+<h3 id="llm-performance-degradation">2. LLM Performance Degradation</h3>
+<p><strong>Risk</strong>: Phi-3 doesn’t perform well on crypto
+signals</p>
+<p><strong>Mitigation</strong>: - Swappable LLM backend (can use GPT-4,
+Claude, Llama, etc.) - Prompt engineering testing framework -
+Preliminary scoring works without LLM - Users can disable AI if
+desired</p>
+<p><strong>Likelihood</strong>: Low | <strong>Impact</strong>: Low</p>
+<h3 id="blockchain-data-availability">3. Blockchain Data
+Availability</h3>
+<p><strong>Risk</strong>: Alchemy/Helius change terms, lose access</p>
+<p><strong>Mitigation</strong>: - Multiple providers (Alchemy, Helius,
+QuickNode, Infura) - Self-host nodes as last resort (more expensive but
+viable) - Community can run their own infrastructure</p>
+<p><strong>Likelihood</strong>: Low | <strong>Impact</strong>:
+Medium</p>
+<h2 id="market-risks">Market Risks</h2>
+<h3 id="crypto-bear-market">1. Crypto Bear Market</h3>
+<p><strong>Risk</strong>: User interest drops during prolonged bear
+market</p>
+<p><strong>Mitigation</strong>: - Low operating cost ($0-20/mo) means
+can survive indefinitely - Bear markets = fewer tokens, easier to
+identify quality - Shift marketing to “preservation” vs “gains” -
+Diversify to stocks/forex (technical debt, but possible)</p>
+<p><strong>Likelihood</strong>: Medium | <strong>Impact</strong>:
+Medium</p>
+<h3 id="regulatory-crackdown">2. Regulatory Crackdown</h3>
+<p><strong>Risk</strong>: Governments restrict crypto trading tools</p>
+<p><strong>Mitigation</strong>: - Open source = can’t be shut down - No
+custodial function (just information) - Operate in friendly
+jurisdictions - Pivot to “research tool” if needed</p>
+<p><strong>Likelihood</strong>: Low | <strong>Impact</strong>: High</p>
+<h3 id="competitor-catches-up">3. Competitor Catches Up</h3>
+<p><strong>Risk</strong>: Nansen/Arkham add similar features</p>
+<p><strong>Mitigation</strong>: - Open source = faster iteration via
+community - Cost advantage (free vs $150/mo) - Network effects (labeled
+wallets, outcome data) - First-mover advantage in open-source space</p>
+<p><strong>Likelihood</strong>: Medium | <strong>Impact</strong>:
+Medium</p>
+<h2 id="operational-risks">Operational Risks</h2>
+<h3 id="key-person-dependency">1. Key Person Dependency</h3>
+<p><strong>Risk</strong>: Founder(s) leave, project stalls</p>
+<p><strong>Mitigation</strong>: - Comprehensive documentation - Open
+source = community can fork - Hire redundant engineers early - Build
+strong community of contributors</p>
+<p><strong>Likelihood</strong>: Low | <strong>Impact</strong>: High</p>
+<h3 id="scaling-infrastructure">2. Scaling Infrastructure</h3>
+<p><strong>Risk</strong>: Can’t handle 10k+ users on current setup</p>
+<p><strong>Mitigation</strong>: - Architecture designed for horizontal
+scaling - Kubernetes migration path documented - Managed service
+providers (RDS, ElastiCache) ready - Revenue from paid users funds
+infrastructure</p>
+<p><strong>Likelihood</strong>: Low | <strong>Impact</strong>:
+Medium</p>
+<h1 id="traction-milestones">Traction &amp; Milestones</h1>
+<h2 id="current-status">Current Status</h2>
+<p><strong>Product</strong>: - ✅ MVP complete (all core features) - ✅
+Docker deployment working - ✅ 9 data sources integrated - ✅ AI
+integration (Ollama/Phi-3) - ✅ Telegram alerts functional - ✅ Open
+source (MIT license)</p>
+<p><strong>Metrics</strong>: - GitHub: Not yet public - Users: 1
+(founder) - MRR: $0 (pre-launch)</p>
+<h2 id="day-milestones">30-Day Milestones</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Public GitHub launch</label></li>
+<li><label><input type="checkbox" />Product Hunt launch</label></li>
+<li><label><input type="checkbox" />100 GitHub stars</label></li>
+<li><label><input type="checkbox" />10 active users (free)</label></li>
+<li><label><input type="checkbox" />First community contribution
+(PR)</label></li>
+</ul>
+<h2 id="day-milestones-1">90-Day Milestones</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />500 GitHub stars</label></li>
+<li><label><input type="checkbox" />50 active users</label></li>
+<li><label><input type="checkbox" />Premium service launch</label></li>
+<li><label><input type="checkbox" />First paid customer</label></li>
+<li><label><input type="checkbox" />$500 MRR</label></li>
+</ul>
+<h2 id="day-milestones-2">180-Day Milestones</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />2,000 GitHub stars</label></li>
+<li><label><input type="checkbox" />200 active users</label></li>
+<li><label><input type="checkbox" />20 paid customers</label></li>
+<li><label><input type="checkbox" />$1,000 MRR</label></li>
+<li><label><input type="checkbox" />First enterprise lead</label></li>
+</ul>
+<h2 id="year-milestones">1-Year Milestones</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />5,000 GitHub stars</label></li>
+<li><label><input type="checkbox" />1,000 active users</label></li>
+<li><label><input type="checkbox" />100 paid customers</label></li>
+<li><label><input type="checkbox" />$5,000 MRR</label></li>
+<li><label><input type="checkbox" />Profitable
+month-to-month</label></li>
+</ul>
+<h1 id="appendix">Appendix</h1>
+<h2 id="sample-alert-telegram">Sample Alert (Telegram)</h2>
+<pre><code>🚨 CONFLUENCE (2 wallets) 🚨
+
+Token: PEPE ($0.00000123)
+MCap: $450k | Liq: $250k
+
+Wallets:
+- Ansem ✓ (0x8f94...)
+  30D PnL: $127k | Best: 8.2x | Early: 85
+
+- Unknown Whale #42 (0x3d2c...)
+  30D PnL: $89k | Best: 5.1x | Early: 72
+
+Confluence Window: 8 minutes
+Avg 30D PnL: $108k
+
+🤖 AI Analysis
+Confidence: 89/100
+Recommendation: BUY
+Reasoning: Known trader Ansem + strong confluence
+with high early scores suggests institutional interest
+
+📊 Links
+TX: solscan.io/tx/4xK9p...
+Chart: birdeye.so/token/PEPE...
+DEX: dexscreener.com/solana/PEPE</code></pre>
+<h2 id="technical-specs">Technical Specs</h2>
+<p><strong>Database Schema</strong>: 8 tables - tokens, seed_tokens,
+wallets, trades, positions, wallet_stats_30d, alerts, alert_outcomes</p>
+<p><strong>API Endpoints</strong>: 12 routes - Health, watchlist, stats,
+alerts, trades, performance</p>
+<p><strong>Background Jobs</strong>: 6 scheduled tasks - Token discovery
+(15min) - Wallet discovery (15min) - PnL calculation (hourly) - Stats
+aggregation (hourly) - Watchlist maintenance (nightly) - Performance
+tracking (hourly)</p>
+<p><strong>Codebase Stats</strong>: - Python files: 45+ - Lines of code:
+~8,000 - Test coverage: (To be added) - Dependencies: 25 packages</p>
+<h2 id="links">Links</h2>
+<ul>
+<li><strong>GitHub</strong>: (To be added upon public launch)</li>
+<li><strong>Demo Video</strong>: (To be added)</li>
+<li><strong>Documentation</strong>: README.md, TOOLS_GUIDE.md,
+USAGE.md</li>
+<li><strong>Contact</strong>: (Your email/Telegram)</li>
+</ul>
+<hr />
+<p><strong>This document is confidential and intended for investor
+review only.</strong></p>
+<p>Last updated: October 3, 2025</p>
+</body>
+</html>
