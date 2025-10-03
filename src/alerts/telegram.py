@@ -112,21 +112,35 @@ class TelegramAlerter:
         pair_address = data.get("pair_address", "")
         dex = data.get("dex", "")
 
-        # Simple formatting without Markdown
+        # Actionable alert format with buy info
         wallet_display = f"{wallet[:10]}...{wallet[-8:]}"
 
-        message = f"""🔔 TOP WHALE BUY
+        # Generate buy links based on chain
+        buy_link = self._get_buy_link(chain, token_address)
 
-Token: {token_symbol} (${price_usd:.8f})
-Wallet: {wallet_display}
-30D PnL: ${pnl_30d:,.0f} | Best: {best_multiple:.1f}x
-EarlyScore: {earlyscore:.0f}
+        message = f"""🔔 WHALE BUY SIGNAL
 
-Chain: {chain.title()}
-DEX: {dex or 'Unknown'}
+💰 TOKEN: {token_symbol}
+📍 Price: ${price_usd:.8f}
 
-TX: https://etherscan.io/tx/{tx_hash}
-Chart: https://dexscreener.com/{chain}/{token_address}
+🔗 CONTRACT ADDRESS:
+{token_address}
+
+🐋 WHALE STATS:
+Address: {wallet_display}
+30D PnL: ${pnl_30d:,.0f}
+Best Trade: {best_multiple:.1f}x
+Early Score: {earlyscore:.0f}/100
+
+⛓ Chain: {chain.title()}
+🔄 DEX: {dex or 'Unknown'}
+
+🚀 QUICK ACTIONS:
+{buy_link}
+📊 Chart: https://dexscreener.com/{chain}/{token_address}
+🔍 TX: https://etherscan.io/tx/{tx_hash}
+
+⚡ Copy contract address above to buy on Uniswap/your wallet
 """
         return message
 
@@ -158,19 +172,56 @@ Chart: https://dexscreener.com/{chain}/{token_address}
         wallet_list = "\n".join(wallet_lines)
         avg_pnl = total_pnl / num_wallets if num_wallets > 0 else 0
 
-        message = f"""🚨 CONFLUENCE ALERT ({num_wallets} whales)
+        # Generate buy link
+        buy_link = self._get_buy_link(chain, token_address)
 
-Token: {token_symbol} (${price_usd:.8f})
+        message = f"""🚨 CONFLUENCE ALERT - {num_wallets} WHALES BUYING!
 
-Whales buying:
+💰 TOKEN: {token_symbol}
+📍 Price: ${price_usd:.8f}
+
+🔗 CONTRACT ADDRESS:
+{token_address}
+
+🐋 WHALES DETECTED ({num_wallets}):
 {wallet_list}
 
-Avg 30D PnL: ${avg_pnl:,.0f}
-Chain: {chain.title()}
+💵 Avg 30D PnL: ${avg_pnl:,.0f}
+⛓ Chain: {chain.title()}
 
-Chart: https://dexscreener.com/{chain}/{token_address}
+🚀 QUICK BUY:
+{buy_link}
+📊 Chart: https://dexscreener.com/{chain}/{token_address}
+
+⚡ STRONG SIGNAL - Multiple profitable whales buying same token!
+⚡ Copy contract address above to buy immediately
 """
         return message
+
+    def _get_buy_link(self, chain: str, token_address: str) -> str:
+        """Generate buy link for chain.
+
+        Args:
+            chain: Chain identifier
+            token_address: Token contract address
+
+        Returns:
+            Buy link string
+        """
+        if chain == "ethereum":
+            return f"💎 Uniswap: https://app.uniswap.org/#/swap?outputCurrency={token_address}"
+        elif chain == "base":
+            return f"💎 Uniswap (Base): https://app.uniswap.org/#/swap?chain=base&outputCurrency={token_address}"
+        elif chain == "arbitrum":
+            return f"💎 Uniswap (Arbitrum): https://app.uniswap.org/#/swap?chain=arbitrum&outputCurrency={token_address}"
+        elif chain == "bsc":
+            return f"💎 PancakeSwap: https://pancakeswap.finance/swap?outputCurrency={token_address}"
+        elif chain == "polygon":
+            return f"💎 Quickswap: https://quickswap.exchange/#/swap?outputCurrency={token_address}"
+        elif chain == "solana":
+            return f"💎 Jupiter: https://jup.ag/swap/SOL-{token_address}"
+        else:
+            return f"💎 DEX Screener: https://dexscreener.com/{chain}/{token_address}"
 
     def _get_explorer_links(self, chain: str, token_address: str, tx_hash: str) -> str:
         """Generate explorer links for chain.
