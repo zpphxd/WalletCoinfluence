@@ -73,7 +73,7 @@ class WatchlistManager:
 
         logger.debug(
             f"Wallet {wallet_address[:8]}... evaluation: trades={stats.trades_count}, "
-            f"pnl=${stats.realized_pnl_usd:.0f}, best={stats.best_trade_multiple:.1f}x, "
+            f"pnl=${stats.realized_pnl_usd:.0f}, best={stats.best_trade_multiple or 0:.1f}x, "
             f"meets_criteria={meets_criteria}"
         )
 
@@ -118,7 +118,7 @@ class WatchlistManager:
             logger.info(
                 f"Removing wallet {wallet_address[:8]}...: "
                 f"pnl=${stats.realized_pnl_usd:.0f}, "
-                f"drawdown={stats.max_drawdown:.1f}%, "
+                f"drawdown={stats.max_drawdown or 0:.1f}%, "
                 f"trades={stats.trades_count}"
             )
 

@@ -143,14 +143,14 @@ class WalletMonitor:
 
                 client = HeliusClient()
                 recent_txs = await client.get_wallet_transactions(
-                    wallet.address, limit=10
+                    wallet.address, limit=100
                 )
             else:
                 from src.clients.alchemy import AlchemyClient
 
                 client = AlchemyClient()
                 recent_txs = await client.get_wallet_transactions(
-                    wallet.address, wallet.chain_id, limit=10
+                    wallet.address, wallet.chain_id, limit=100
                 )
 
             new_trades = []
