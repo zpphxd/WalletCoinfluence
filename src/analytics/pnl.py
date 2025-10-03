@@ -39,7 +39,7 @@ class FIFOPnLCalculator:
         # Get all trades for this wallet in period
         trades = (
             self.db.query(Trade)
-            .filter(and_(Trade.wallet == wallet_address, Trade.ts >= since))
+            .filter(and_(Trade.wallet_address == wallet_address, Trade.ts >= since))
             .order_by(Trade.ts.asc())
             .all()
         )
@@ -165,7 +165,7 @@ class FIFOPnLCalculator:
             self.db.query(Position)
             .filter(
                 and_(
-                    Position.wallet == wallet_address,
+                    Position.wallet_address == wallet_address,
                     Position.token_address == token_address,
                 )
             )
@@ -191,7 +191,7 @@ class FIFOPnLCalculator:
             )
 
             position = Position(
-                wallet=wallet_address,
+                wallet_address=wallet_address,
                 token_address=token_address,
                 chain_id=chain_id,
                 qty=total_qty,
@@ -220,7 +220,7 @@ class FIFOPnLCalculator:
         # Get all closed positions (have both buys and sells)
         trades = (
             self.db.query(Trade)
-            .filter(and_(Trade.wallet == wallet_address, Trade.ts >= since))
+            .filter(and_(Trade.wallet_address == wallet_address, Trade.ts >= since))
             .order_by(Trade.ts.asc())
             .all()
         )

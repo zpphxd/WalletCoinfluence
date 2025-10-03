@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql://user:password@localhost:5432/wallet_scout"
     redis_url: str = "redis://localhost:6379/0"
+    redis_host: str = "redis"
+    redis_port: int = 6379
 
     # API Keys
     alchemy_api_key: str = ""

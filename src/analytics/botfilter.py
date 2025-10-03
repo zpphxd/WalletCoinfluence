@@ -56,7 +56,7 @@ class BotFilter:
             self.db.query(Trade)
             .filter(
                 and_(
-                    Trade.wallet == wallet_address,
+                    Trade.wallet_address == wallet_address,
                     Trade.chain_id == chain_id,
                     Trade.ts >= since,
                 )

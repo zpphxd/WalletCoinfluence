@@ -70,7 +70,7 @@ class EarlyScoreCalculator:
         """
         # Count how many unique buyers bought before this trade
         buyers_before = (
-            self.db.query(func.count(func.distinct(Trade.wallet)))
+            self.db.query(func.count(func.distinct(Trade.wallet_address)))
             .filter(
                 and_(
                     Trade.token_address == token_address,
@@ -84,7 +84,7 @@ class EarlyScoreCalculator:
 
         # Total unique buyers
         total_buyers = (
-            self.db.query(func.count(func.distinct(Trade.wallet)))
+            self.db.query(func.count(func.distinct(Trade.wallet_address)))
             .filter(and_(Trade.token_address == token_address, Trade.side == "buy"))
             .scalar()
             or 1
@@ -152,7 +152,7 @@ class EarlyScoreCalculator:
             self.db.query(Trade)
             .filter(
                 and_(
-                    Trade.wallet == wallet_address,
+                    Trade.wallet_address == wallet_address,
                     Trade.token_address == token_address,
                     Trade.ts == trade_ts,
                     Trade.side == "buy",
@@ -217,7 +217,7 @@ class EarlyScoreCalculator:
             self.db.query(Trade)
             .filter(
                 and_(
-                    Trade.wallet == wallet_address,
+                    Trade.wallet_address == wallet_address,
                     Trade.side == "buy",
                     Trade.ts >= since,
                 )

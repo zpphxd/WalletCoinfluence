@@ -132,20 +132,28 @@ class WalletDiscovery:
                     # Update last active
                     wallet.last_active_at = datetime.utcnow()
 
-                    # Create trade record
-                    trade = Trade(
-                        tx_hash=tx.get("tx_hash"),
-                        ts=tx.get("timestamp", datetime.utcnow()),
-                        chain_id=chain_id,
-                        wallet_address=wallet_address,
-                        token_address=token_address,
-                        side="buy",
-                        qty_token=float(tx.get("amount", 0)),
-                        price_usd=float(tx.get("price_usd", 0)),
-                        usd_value=float(tx.get("value_usd", 0)),
-                        venue=tx.get("dex"),
+                    # Create trade record (check for duplicates first)
+                    tx_hash = tx.get("tx_hash")
+                    existing_trade = (
+                        self.db.query(Trade)
+                        .filter(Trade.tx_hash == tx_hash)
+                        .first()
                     )
-                    self.db.add(trade)
+
+                    if not existing_trade:
+                        trade = Trade(
+                            tx_hash=tx_hash,
+                            ts=tx.get("timestamp", datetime.utcnow()),
+                            chain_id=chain_id,
+                            wallet_address=wallet_address,
+                            token_address=token_address,
+                            side="buy",
+                            qty_token=float(tx.get("amount", 0)),
+                            price_usd=float(tx.get("price_usd", 0)),
+                            usd_value=float(tx.get("value_usd", 0)),
+                            venue=tx.get("dex"),
+                        )
+                        self.db.add(trade)
 
                 except Exception as e:
                     logger.error(f"Error processing transaction: {str(e)}")

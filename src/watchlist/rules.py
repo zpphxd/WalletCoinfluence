@@ -54,7 +54,7 @@ class WatchlistManager:
             self.db.query(WalletStats30D)
             .filter(
                 and_(
-                    WalletStats30D.wallet == wallet_address,
+                    WalletStats30D.wallet_address == wallet_address,
                     WalletStats30D.chain_id == chain_id,
                 )
             )
@@ -98,7 +98,7 @@ class WatchlistManager:
             self.db.query(WalletStats30D)
             .filter(
                 and_(
-                    WalletStats30D.wallet == wallet_address,
+                    WalletStats30D.wallet_address == wallet_address,
                     WalletStats30D.chain_id == chain_id,
                 )
             )
@@ -201,7 +201,7 @@ class WatchlistManager:
             )
 
             candidates = [
-                {"address": ws.wallet, "chain_id": chain}
+                {"address": ws.wallet_address, "chain_id": chain}
                 for ws in wallet_stats
             ]
 

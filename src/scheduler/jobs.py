@@ -64,7 +64,7 @@ async def stats_rollup_job() -> None:
                 stats = (
                     db.query(WalletStats30D)
                     .filter(
-                        WalletStats30D.wallet == wallet.address,
+                        WalletStats30D.wallet_address == wallet.address,
                         WalletStats30D.chain_id == wallet.chain_id,
                     )
                     .first()
@@ -87,7 +87,7 @@ async def stats_rollup_job() -> None:
                         db.query(func.count(Trade.tx_hash))
                         .filter(
                             and_(
-                                Trade.wallet == wallet.address,
+                                Trade.wallet_address == wallet.address,
                                 Trade.ts >= since,
                             )
                         )
@@ -96,7 +96,7 @@ async def stats_rollup_job() -> None:
                     )
 
                     stats = WalletStats30D(
-                        wallet=wallet.address,
+                        wallet_address=wallet.address,
                         chain_id=wallet.chain_id,
                         trades_count=trade_count,
                         realized_pnl_usd=pnl_data["realized_pnl"],
