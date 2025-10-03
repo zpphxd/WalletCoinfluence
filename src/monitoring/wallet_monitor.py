@@ -162,8 +162,8 @@ class WalletMonitor:
                 if tx_hash == last_seen_tx:
                     break
 
-                # Only interested in buys
-                if tx.get("type") != "buy":
+                # Track both buys and sells
+                if tx.get("type") not in ["buy", "sell"]:
                     continue
 
                 new_trades.append(
