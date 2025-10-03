@@ -268,6 +268,23 @@ async def watchlist_maintenance_job() -> None:
         db.close()
 
 
+async def performance_evaluation_job() -> None:
+    """Evaluate system performance and self-score (every hour)."""
+    logger.info("Starting performance self-evaluation")
+    db = SessionLocal()
+
+    try:
+        from src.analytics.performance_tracker import log_performance_summary
+
+        log_performance_summary(db)
+        logger.info("Performance evaluation complete - check logs for score")
+
+    except Exception as e:
+        logger.error(f"Performance evaluation job failed: {str(e)}")
+    finally:
+        db.close()
+
+
 def setup_scheduler() -> AsyncIOScheduler:
     """Set up and configure the job scheduler.
 

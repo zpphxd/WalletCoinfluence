@@ -208,18 +208,19 @@ Early Score: {earlyscore:.0f}/100
         Returns:
             Buy link string
         """
+        # Multiple buy options for Kraken wallet users
         if chain == "ethereum":
-            return f"💎 Uniswap: https://app.uniswap.org/#/swap?outputCurrency={token_address}"
+            return f"💎 Uniswap: https://app.uniswap.org/#/swap?outputCurrency={token_address}\n🔗 1inch: https://app.1inch.io/#/1/simple/swap/ETH/{token_address}"
         elif chain == "base":
-            return f"💎 Uniswap (Base): https://app.uniswap.org/#/swap?chain=base&outputCurrency={token_address}"
+            return f"💎 Uniswap: https://app.uniswap.org/#/swap?chain=base&outputCurrency={token_address}\n🔗 Aerodrome: https://aerodrome.finance/swap?from=eth&to={token_address}"
         elif chain == "arbitrum":
-            return f"💎 Uniswap (Arbitrum): https://app.uniswap.org/#/swap?chain=arbitrum&outputCurrency={token_address}"
+            return f"💎 Uniswap: https://app.uniswap.org/#/swap?chain=arbitrum&outputCurrency={token_address}\n🔗 Camelot: https://app.camelot.exchange/?token2={token_address}"
         elif chain == "bsc":
-            return f"💎 PancakeSwap: https://pancakeswap.finance/swap?outputCurrency={token_address}"
+            return f"💎 PancakeSwap: https://pancakeswap.finance/swap?outputCurrency={token_address}\n🔗 1inch: https://app.1inch.io/#/56/simple/swap/BNB/{token_address}"
         elif chain == "polygon":
-            return f"💎 Quickswap: https://quickswap.exchange/#/swap?outputCurrency={token_address}"
+            return f"💎 Quickswap: https://quickswap.exchange/#/swap?outputCurrency={token_address}\n🔗 1inch: https://app.1inch.io/#/137/simple/swap/MATIC/{token_address}"
         elif chain == "solana":
-            return f"💎 Jupiter: https://jup.ag/swap/SOL-{token_address}"
+            return f"💎 Jupiter: https://jup.ag/swap/SOL-{token_address}\n🔗 Raydium: https://raydium.io/swap/?inputCurrency=sol&outputCurrency={token_address}"
         else:
             return f"💎 DEX Screener: https://dexscreener.com/{chain}/{token_address}"
 
