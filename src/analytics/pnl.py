@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
 from src.db.models import Trade, Position
+from src.utils.price_fetcher import MultiSourcePriceFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +22,12 @@ class FIFOPnLCalculator:
             db: Database session
         """
         self.db = db
+        self.price_fetcher = MultiSourcePriceFetcher()  # Multi-source price fetcher with fallbacks
 
-    def calculate_wallet_pnl(
+    async def calculate_wallet_pnl(
         self, wallet_address: str, days: int = 30
     ) -> Dict[str, float]:
-        """Calculate total PnL for a wallet over specified period.
+        """Calculate total PnL for a wallet over specified period (async for price fetching).
 
         Args:
             wallet_address: Wallet address
@@ -54,9 +56,9 @@ class FIFOPnLCalculator:
         total_realized = 0.0
         total_unrealized = 0.0
 
-        # Calculate per token
+        # Calculate per token (async)
         for token_address, token_trades in trades_by_token.items():
-            realized, unrealized = self._calculate_token_pnl(
+            realized, unrealized = await self._calculate_token_pnl(
                 wallet_address, token_address, token_trades
             )
             total_realized += realized
@@ -68,10 +70,10 @@ class FIFOPnLCalculator:
             "total_pnl": total_realized + total_unrealized,
         }
 
-    def _calculate_token_pnl(
+    async def _calculate_token_pnl(
         self, wallet_address: str, token_address: str, trades: List[Trade]
     ) -> Tuple[float, float]:
-        """Calculate PnL for a specific token using FIFO.
+        """Calculate PnL for a specific token using FIFO (async for price fetching).
 
         Args:
             wallet_address: Wallet address
@@ -123,7 +125,44 @@ class FIFOPnLCalculator:
 
         # Calculate unrealized PnL from remaining positions
         unrealized_pnl = 0.0
-        current_price = trades[-1].price_usd if trades else 0.0
+
+        # CRITICAL FIX: Fetch CURRENT LIVE PRICE (not last trade price!)
+        # Uses multi-source fetcher with fallbacks: DexScreener → Birdeye → CoinGecko
+        current_price = 0.0
+        if buy_queue:  # Only fetch if we have open positions
+            try:
+                # Get chain_id from first trade
+                chain_id = trades[0].chain_id if trades else "ethereum"
+
+                # Get current price from multi-source fetcher (async)
+                current_price = await self.price_fetcher.get_token_price(token_address, chain_id)
+
+                if current_price == 0.0:
+                    # Fallback to last trade price if ALL price sources fail
+                    current_price = trades[-1].price_usd if trades else 0.0
+                    logger.warning(
+                        f"⚠️ ALL price sources failed for {token_address[:10]}..., "
+                        f"using last trade price ${current_price:.8f}"
+                    )
+                else:
+                    last_trade_price = trades[-1].price_usd if trades else 0.0
+                    price_change_pct = (
+                        ((current_price - last_trade_price) / last_trade_price * 100)
+                        if last_trade_price > 0
+                        else 0
+                    )
+                    logger.debug(
+                        f"✅ Current price: {token_address[:10]}... = ${current_price:.8f} "
+                        f"(last trade: ${last_trade_price:.8f}, "
+                        f"change: {price_change_pct:+.1f}%)"
+                    )
+            except Exception as e:
+                # Fallback to last trade price on error
+                current_price = trades[-1].price_usd if trades else 0.0
+                logger.error(
+                    f"❌ Error fetching current price for {token_address[:10]}...: {str(e)}, "
+                    f"using last trade price ${current_price:.8f}"
+                )
 
         for qty, buy_price, cost_basis in buy_queue:
             current_value = qty * current_price

@@ -53,8 +53,8 @@ async def stats_rollup_job() -> None:
 
         for wallet in wallets:
             try:
-                # Calculate PnL
-                pnl_data = pnl_calc.calculate_wallet_pnl(wallet.address, days=30)
+                # Calculate PnL (async method)
+                pnl_data = await pnl_calc.calculate_wallet_pnl(wallet.address, days=30)
                 best_multiple = pnl_calc.get_best_trade_multiple(wallet.address, days=30)
 
                 # Calculate median EarlyScore
