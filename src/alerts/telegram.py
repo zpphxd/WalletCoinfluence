@@ -47,7 +47,7 @@ class TelegramAlerter:
             await self.bot.send_message(
                 chat_id=self.chat_id,
                 text=message,
-                parse_mode="Markdown",
+                parse_mode=None,  # Disable Markdown to avoid parsing errors
                 disable_web_page_preview=True,
             )
             logger.info(f"Sent single wallet alert for {alert_data.get('token_symbol')}")
@@ -75,17 +75,20 @@ class TelegramAlerter:
             await self.bot.send_message(
                 chat_id=self.chat_id,
                 text=message,
-                parse_mode="Markdown",
+                parse_mode=None,  # Disable Markdown to avoid parsing errors
                 disable_web_page_preview=True,
             )
             logger.info(
-                f"Sent confluence alert: {len(alert_data.get('wallets', []))} wallets "
+                f"Sent confluence alert: {len(alert_data.get('wallet_stats_list', []))} wallets "
                 f"for {alert_data.get('token_symbol')}"
             )
             return True
 
         except TelegramError as e:
             logger.error(f"Telegram error: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Error sending confluence alert: {str(e)}")
             return False
 
     def _format_single_alert(self, data: Dict[str, Any]) -> str:
@@ -109,28 +112,21 @@ class TelegramAlerter:
         pair_address = data.get("pair_address", "")
         dex = data.get("dex", "")
 
-        # Check for wallet label
-        wallet_label = wallet_labels.get_label(wallet, chain)
-        wallet_display = f"`{wallet[:8]}...{wallet[-6:]}`"
-        if wallet_label:
-            wallet_name = wallet_label.get("name", "")
-            verified = "✓" if wallet_label.get("verified") else ""
-            wallet_display = f"*{wallet_name}* {verified}\n`{wallet[:8]}...{wallet[-6:]}`"
+        # Simple formatting without Markdown
+        wallet_display = f"{wallet[:10]}...{wallet[-8:]}"
 
-        # Generate explorer links based on chain
-        explorer_links = self._get_explorer_links(chain, token_address, tx_hash)
+        message = f"""🔔 TOP WHALE BUY
 
-        message = f"""🔔 *TOP WALLET BUY*
+Token: {token_symbol} (${price_usd:.8f})
+Wallet: {wallet_display}
+30D PnL: ${pnl_30d:,.0f} | Best: {best_multiple:.1f}x
+EarlyScore: {earlyscore:.0f}
 
-*Token:* {token_symbol} (${price_usd:.6f})
-*Wallet:* {wallet_display}
-*30D PnL:* ${pnl_30d:,.0f} | *Best:* {best_multiple:.1f}x
-*EarlyScore:* {earlyscore:.0f}
+Chain: {chain.title()}
+DEX: {dex or 'Unknown'}
 
-*Chain:* {chain.title()}
-*DEX:* {dex or 'Unknown'}
-
-{explorer_links}
+TX: https://etherscan.io/tx/{tx_hash}
+Chart: https://dexscreener.com/{chain}/{token_address}
 """
         return message
 
@@ -147,29 +143,32 @@ class TelegramAlerter:
         token_address = data.get("token_address", "")
         chain = data.get("chain_id", "")
         price_usd = data.get("price_usd", 0)
-        liquidity_usd = data.get("liquidity_usd", 0)
-        wallets = data.get("wallets", [])
-        num_wallets = len(wallets)
-        avg_pnl = data.get("avg_pnl_30d", 0)
-        window_minutes = data.get("window_minutes", 0)
+        wallet_stats_list = data.get("wallet_stats_list", [])
+        num_wallets = len(wallet_stats_list)
 
-        wallet_list = "\n".join(
-            [f"• `{w['address'][:8]}...` (${w.get('pnl_30d', 0):,.0f})" for w in wallets[:5]]
-        )
+        # Format wallet list
+        wallet_lines = []
+        total_pnl = 0
+        for w in wallet_stats_list[:5]:
+            addr = w.get('address', '')
+            pnl = w.get('pnl_30d', 0)
+            total_pnl += pnl
+            wallet_lines.append(f"  {addr[:10]}...{addr[-8:]} (${pnl:,.0f})")
 
-        message = f"""🚨 *CONFLUENCE* ({num_wallets} wallets)
+        wallet_list = "\n".join(wallet_lines)
+        avg_pnl = total_pnl / num_wallets if num_wallets > 0 else 0
 
-*Token:* {token_symbol} (${price_usd:.6f})
-*Wallets:*
+        message = f"""🚨 CONFLUENCE ALERT ({num_wallets} whales)
+
+Token: {token_symbol} (${price_usd:.8f})
+
+Whales buying:
 {wallet_list}
 
-*Avg 30D PnL:* ${avg_pnl:,.0f}
-*Window:* {window_minutes} minutes
+Avg 30D PnL: ${avg_pnl:,.0f}
+Chain: {chain.title()}
 
-*Chain:* {chain.title()}
-*Liquidity:* ${liquidity_usd:,.0f}
-
-[Token](https://dexscreener.com/{chain}/{token_address})
+Chart: https://dexscreener.com/{chain}/{token_address}
 """
         return message
 

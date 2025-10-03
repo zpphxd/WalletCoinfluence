@@ -148,12 +148,12 @@ async def whale_discovery_job() -> None:
         from src.clients.alchemy import AlchemyClient
         from datetime import datetime
 
-        # Get top trending tokens with high liquidity
+        # Get top trending tokens with high liquidity (INCREASED FOR MAX SPEED)
         trending_tokens = (
             db.query(SeedToken)
-            .filter(SeedToken.liquidity_usd > 100000)  # At least $100k liquidity
+            .filter(SeedToken.liquidity_usd > 50000)  # Lowered to $50k for more coverage
             .order_by(SeedToken.volume_24h_usd.desc())
-            .limit(10)  # Top 10 by volume
+            .limit(30)  # Increased to top 30 tokens
             .all()
         )
 
@@ -165,11 +165,11 @@ async def whale_discovery_job() -> None:
 
         for token in trending_tokens:
             try:
-                # Get all transfers for this token
+                # Get all transfers for this token (INCREASED LIMIT FOR MAX SPEED)
                 transfers = await client.get_token_transfers(
                     token.token_address,
                     token.chain_id,
-                    limit=50
+                    limit=100  # Doubled to catch more whales
                 )
 
                 # Filter for LARGE transfers ($10k+)
@@ -221,7 +221,7 @@ async def whale_discovery_job() -> None:
                         large_trades_found += 1
 
                 db.commit()
-                await asyncio.sleep(1)  # Rate limiting
+                await asyncio.sleep(0.1)  # Minimal rate limiting for max speed
 
             except Exception as e:
                 logger.error(f"Error processing {token.symbol}: {str(e)}")
@@ -276,46 +276,46 @@ def setup_scheduler() -> AsyncIOScheduler:
     """
     scheduler = AsyncIOScheduler()
 
-    # Runner seed - every 15 minutes
+    # Runner seed - every 5 minutes (max speed)
     scheduler.add_job(
         runner_seed_job,
-        trigger=IntervalTrigger(minutes=settings.runner_poll_minutes),
+        trigger=IntervalTrigger(minutes=5),
         id="runner_seed",
         name="Fetch trending tokens",
         replace_existing=True,
     )
 
-    # Wallet discovery - every hour
+    # Wallet discovery - every 10 minutes (max speed)
     scheduler.add_job(
         wallet_discovery_job,
-        trigger=IntervalTrigger(hours=1),
+        trigger=IntervalTrigger(minutes=10),
         id="wallet_discovery",
         name="Discover wallets from trending tokens",
         replace_existing=True,
     )
 
-    # Enhanced whale discovery - every 30 minutes
+    # Enhanced whale discovery - every 5 minutes (max speed)
     scheduler.add_job(
         whale_discovery_job,
-        trigger=IntervalTrigger(minutes=30),
+        trigger=IntervalTrigger(minutes=5),
         id="whale_discovery",
         name="Find whales making $10k+ trades",
         replace_existing=True,
     )
 
-    # Wallet monitoring - every 5 minutes
+    # Wallet monitoring - every 2 minutes (max speed)
     scheduler.add_job(
         wallet_monitoring_job,
-        trigger=IntervalTrigger(minutes=5),
+        trigger=IntervalTrigger(minutes=2),
         id="wallet_monitoring",
         name="Monitor watchlist wallets for trades",
         replace_existing=True,
     )
 
-    # Stats rollup - every hour
+    # Stats rollup - every 15 minutes (frequent updates)
     scheduler.add_job(
         stats_rollup_job,
-        trigger=IntervalTrigger(hours=1),
+        trigger=IntervalTrigger(minutes=15),
         id="stats_rollup",
         name="Calculate wallet stats",
         replace_existing=True,
@@ -330,12 +330,12 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
-    logger.info("Scheduler configured with jobs:")
-    logger.info(f"  - runner_seed: every {settings.runner_poll_minutes} minutes")
-    logger.info("  - wallet_discovery: every hour")
-    logger.info("  - whale_discovery: every 30 minutes ($10k+ trades)")
-    logger.info("  - wallet_monitoring: every 5 minutes")
-    logger.info("  - stats_rollup: every hour")
+    logger.info("Scheduler configured with jobs (MAX SPEED MODE):")
+    logger.info("  - runner_seed: every 5 minutes")
+    logger.info("  - wallet_discovery: every 10 minutes")
+    logger.info("  - whale_discovery: every 5 minutes ($10k+ trades)")
+    logger.info("  - wallet_monitoring: every 2 minutes")
+    logger.info("  - stats_rollup: every 15 minutes")
     logger.info("  - watchlist_maintenance: daily at 2:00 AM UTC")
 
     return scheduler
