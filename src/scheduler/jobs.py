@@ -138,6 +138,104 @@ async def wallet_discovery_job() -> None:
         db.close()
 
 
+async def whale_discovery_job() -> None:
+    """Enhanced whale discovery - Find wallets making $10k+ trades (every 30 min)."""
+    logger.info("Starting enhanced whale discovery job")
+    db = SessionLocal()
+
+    try:
+        from src.db.models import SeedToken, Wallet, Trade
+        from src.clients.alchemy import AlchemyClient
+        from datetime import datetime
+
+        # Get top trending tokens with high liquidity
+        trending_tokens = (
+            db.query(SeedToken)
+            .filter(SeedToken.liquidity_usd > 100000)  # At least $100k liquidity
+            .order_by(SeedToken.volume_24h_usd.desc())
+            .limit(10)  # Top 10 by volume
+            .all()
+        )
+
+        logger.info(f"Analyzing {len(trending_tokens)} high-liquidity tokens for whale trades")
+
+        client = AlchemyClient()
+        whale_wallets_found = 0
+        large_trades_found = 0
+
+        for token in trending_tokens:
+            try:
+                # Get all transfers for this token
+                transfers = await client.get_token_transfers(
+                    token.token_address,
+                    token.chain_id,
+                    limit=50
+                )
+
+                # Filter for LARGE transfers ($10k+)
+                large_transfers = [
+                    t for t in transfers
+                    if t.get("value_usd", 0) >= 10000 and t.get("type") == "buy"
+                ]
+
+                for transfer in large_transfers:
+                    wallet_address = transfer.get("from_address")
+                    value_usd = transfer.get("value_usd", 0)
+
+                    # Check if wallet already exists
+                    existing = db.query(Wallet).filter(
+                        Wallet.address == wallet_address
+                    ).first()
+
+                    if not existing:
+                        # New whale discovered!
+                        wallet = Wallet(
+                            address=wallet_address,
+                            chain_id=token.chain_id,
+                            first_seen_at=datetime.utcnow(),
+                        )
+                        db.add(wallet)
+                        db.flush()
+                        whale_wallets_found += 1
+                        logger.info(f"🐋 NEW WHALE: {wallet_address[:16]}... bought ${value_usd:,.0f}")
+
+                    # Record the trade
+                    tx_hash = transfer.get("tx_hash")
+                    existing_trade = db.query(Trade).filter(Trade.tx_hash == tx_hash).first()
+
+                    if not existing_trade:
+                        trade = Trade(
+                            tx_hash=tx_hash,
+                            ts=transfer.get("timestamp", datetime.utcnow()),
+                            chain_id=token.chain_id,
+                            wallet_address=wallet_address,
+                            token_address=token.token_address,
+                            side="buy",
+                            qty_token=float(transfer.get("amount", 0)),
+                            price_usd=float(transfer.get("price_usd", 0)),
+                            usd_value=float(value_usd),
+                            venue=transfer.get("dex"),
+                        )
+                        db.add(trade)
+                        db.flush()
+                        large_trades_found += 1
+
+                db.commit()
+                await asyncio.sleep(1)  # Rate limiting
+
+            except Exception as e:
+                logger.error(f"Error processing {token.symbol}: {str(e)}")
+                db.rollback()
+                continue
+
+        logger.info(f"Enhanced whale discovery complete: {whale_wallets_found} new whales, {large_trades_found} large trades ($10k+ each)")
+
+    except Exception as e:
+        logger.error(f"Enhanced whale discovery job failed: {str(e)}")
+    finally:
+        db.close()
+
+
 async def wallet_monitoring_job() -> None:
     """Monitor watchlist wallets for trades (every 5 min)."""
     logger.info("Starting wallet monitoring job")
@@ -196,6 +294,15 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # Enhanced whale discovery - every 30 minutes
+    scheduler.add_job(
+        whale_discovery_job,
+        trigger=IntervalTrigger(minutes=30),
+        id="whale_discovery",
+        name="Find whales making $10k+ trades",
+        replace_existing=True,
+    )
+
     # Wallet monitoring - every 5 minutes
     scheduler.add_job(
         wallet_monitoring_job,
@@ -226,6 +333,7 @@ def setup_scheduler() -> AsyncIOScheduler:
     logger.info("Scheduler configured with jobs:")
     logger.info(f"  - runner_seed: every {settings.runner_poll_minutes} minutes")
     logger.info("  - wallet_discovery: every hour")
+    logger.info("  - whale_discovery: every 30 minutes ($10k+ trades)")
     logger.info("  - wallet_monitoring: every 5 minutes")
     logger.info("  - stats_rollup: every hour")
     logger.info("  - watchlist_maintenance: daily at 2:00 AM UTC")
