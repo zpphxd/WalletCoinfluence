@@ -12,6 +12,7 @@ from src.ingest.runners import RunnerIngestion
 from src.ingest.wallet_discovery import WalletDiscovery
 from src.monitoring.wallet_monitor import WalletMonitor
 from src.watchlist.rules import WatchlistManager
+from src.scheduler.hourly_report import send_hourly_update
 
 logger = logging.getLogger(__name__)
 
@@ -347,12 +348,22 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
-    logger.info("Scheduler configured with jobs (MAX SPEED MODE):")
+    # Hourly Telegram update - every hour on the hour
+    scheduler.add_job(
+        send_hourly_update,
+        trigger=CronTrigger(minute=0),  # Every hour at :00
+        id="hourly_telegram_update",
+        name="Hourly paper trading update to Telegram",
+        replace_existing=True,
+    )
+
+    logger.info("Scheduler configured with jobs (MAX SPEED MODE + HOURLY UPDATES):")
     logger.info("  - runner_seed: every 5 minutes")
     logger.info("  - wallet_discovery: every 10 minutes")
     logger.info("  - whale_discovery: every 5 minutes ($10k+ trades)")
     logger.info("  - wallet_monitoring: every 2 minutes")
     logger.info("  - stats_rollup: every 15 minutes")
     logger.info("  - watchlist_maintenance: daily at 2:00 AM UTC")
+    logger.info("  - hourly_telegram_update: every hour (paper trading report)")
 
     return scheduler
