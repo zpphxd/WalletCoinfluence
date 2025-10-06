@@ -5,6 +5,7 @@ import PaperTrading from './components/PaperTrading'
 import CustomWatchlist from './components/CustomWatchlist'
 import TopWhales from './components/TopWhales'
 import TrendingTokens from './components/TrendingTokens'
+import ConfluenceAlerts from './components/ConfluenceAlerts'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -53,6 +54,12 @@ function App() {
           Overview
         </button>
         <button
+          className={`nav-tab ${activeTab === 'alerts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('alerts')}
+        >
+          🚨 Alerts
+        </button>
+        <button
           className={`nav-tab ${activeTab === 'paper-trading' ? 'active' : ''}`}
           onClick={() => setActiveTab('paper-trading')}
         >
@@ -79,6 +86,7 @@ function App() {
       </div>
 
       {activeTab === 'dashboard' && <Dashboard stats={stats} />}
+      {activeTab === 'alerts' && <ConfluenceAlerts />}
       {activeTab === 'paper-trading' && <PaperTrading />}
       {activeTab === 'watchlist' && <CustomWatchlist />}
       {activeTab === 'whales' && <TopWhales />}

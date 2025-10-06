@@ -496,23 +496,31 @@ class WalletMonitor:
                 .first()
             )
 
-            # Extract wallet addresses from events
+            # Extract wallet addresses and trade details from events
             wallet_addrs = [event.get("wallet") for event in confluence_events]
 
-            # Get stats for all wallets
+            # Get stats and trade details for all wallets
             wallet_stats_list = []
-            for wallet_addr in wallet_addrs:
+            for event in confluence_events:
+                wallet_addr = event.get("wallet")
                 stats = (
                     self.db.query(WalletStats30D)
                     .filter(WalletStats30D.wallet_address == wallet_addr)
                     .first()
                 )
+
+                # Get trade details from event metadata
+                trade_metadata = event.get("metadata", {})
+
                 if stats:
                     wallet_stats_list.append({
                         "address": wallet_addr,
                         "pnl_30d": stats.realized_pnl_usd + stats.unrealized_pnl_usd,
                         "best_multiple": stats.best_trade_multiple,
                         "earlyscore": stats.earlyscore_median,
+                        "purchase_amount_usd": trade_metadata.get("value_usd", 0),
+                        "price_usd": trade_metadata.get("price_usd", 0),
+                        "tx_hash": trade_metadata.get("tx_hash", ""),
                     })
 
             avg_pnl = (
@@ -535,7 +543,7 @@ class WalletMonitor:
             # }
             # await self.telegram.send_confluence_alert(alert_data)
 
-            # Log alert
+            # Log alert with full trade details
             import json
 
             alert = Alert(
@@ -544,7 +552,12 @@ class WalletMonitor:
                 token_address=trade["token_address"],
                 chain_id=trade["chain_id"],
                 wallets_json=json.dumps(wallet_addrs),
-                payload_json=str(trade),
+                payload_json=json.dumps({
+                    "wallet_details": wallet_stats_list,
+                    "side": side,
+                    "token_symbol": token.symbol if token else "Unknown",
+                    "token_price": trade.get("price_usd", 0),
+                }),
             )
             self.db.add(alert)
             self.db.commit()

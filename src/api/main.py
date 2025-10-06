@@ -278,20 +278,75 @@ async def get_trending_tokens(limit: int = 20, db: Session = Depends(get_db)):
 
 @app.get("/api/alerts/recent")
 async def get_recent_alerts(limit: int = 20, db: Session = Depends(get_db)):
-    """Get recent confluence alerts."""
+    """Get recent confluence alerts with enriched data."""
     try:
-        alerts = db.query(Alert).order_by(Alert.ts.desc()).limit(limit).all()
+        alerts = (
+            db.query(Alert, Token)
+            .outerjoin(Token, Alert.token_address == Token.token_address)
+            .filter(Alert.type == "confluence")
+            .order_by(Alert.ts.desc())
+            .limit(limit)
+            .all()
+        )
 
         results = []
-        for alert in alerts:
+        for alert, token in alerts:
+            # Parse wallet addresses and payload from JSON
+            import json
+            try:
+                wallet_addresses = json.loads(alert.wallets_json) if alert.wallets_json else []
+            except:
+                wallet_addresses = []
+
+            # Parse payload for detailed trade info
+            try:
+                payload = json.loads(alert.payload_json) if alert.payload_json else {}
+            except:
+                payload = {}
+
+            # Use wallet_details from payload if available, otherwise get from stats
+            whale_stats = payload.get("wallet_details", [])
+            if not whale_stats:
+                # Fallback: Get wallet stats for confluence participants
+                whale_stats = []
+                for wallet_addr in wallet_addresses:
+                    stats = (
+                        db.query(WalletStats30D)
+                        .filter(
+                            WalletStats30D.wallet_address == wallet_addr,
+                            WalletStats30D.chain_id == alert.chain_id,
+                        )
+                        .first()
+                    )
+                    if stats:
+                        whale_stats.append({
+                            "address": wallet_addr[:10] + "...",
+                            "pnl_30d": stats.realized_pnl_usd + stats.unrealized_pnl_usd,
+                            "best_trade": stats.best_trade_multiple,
+                            "early_score": stats.earlyscore_median,
+                            "purchase_amount_usd": 0,
+                        })
+            else:
+                # Format addresses in whale_stats
+                for whale in whale_stats:
+                    whale["address"] = whale.get("address", "")[:10] + "..."
+
+            # Get current token price (already cached with 60s TTL, minimal API impact)
+            current_price = token.last_price_usd if token else 0
+
             results.append(
                 {
                     "id": alert.id,
                     "timestamp": alert.ts.isoformat() if alert.ts else None,
                     "type": alert.type,
                     "token_address": alert.token_address,
+                    "token_symbol": payload.get("token_symbol") or (token.symbol if token else "Unknown"),
+                    "token_price": current_price,
+                    "token_price_at_alert": payload.get("token_price", 0),
                     "chain_id": alert.chain_id,
-                    "wallets": alert.wallets_json,
+                    "whale_count": len(wallet_addresses),
+                    "whales": whale_stats,
+                    "side": payload.get("side", "buy"),
                 }
             )
 
