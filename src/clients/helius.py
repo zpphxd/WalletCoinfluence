@@ -32,43 +32,76 @@ class HeliusClient(BaseAPIClient):
 
     async def get_wallet_transactions(
         self, wallet_address: str, limit: int = 100
-    ) -> List[Dict[str, Any]]:
-        """Get wallet transactions (for monitoring whales)."""
+        ) -> List[Dict[str, Any]]:
+        """Get wallet transactions using Helius enhanced transactions API."""
         try:
-            # Use Helius' enhanced getSignaturesForAddress via JSON-RPC
-            payload = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "getSignaturesForAddress",
-                "params": [wallet_address, {"limit": min(limit, 1000)}]
-            }
-
-            response = await self.post(
-                f"/?api-key={self.api_key}",
-                json=payload
-            )
-
-            if "error" in response:
-                logger.error(f"Helius API error: {response['error']}")
+            if not self.api_key:
+                logger.warning("Helius API key not configured - skipping Solana wallet")
                 return []
 
-            # Return simplified format for wallet monitor
+            # Use Helius enhanced transactions endpoint (parse transactions for us!)
+            # Endpoint: https://api.helius.xyz/v0/addresses/{address}/transactions
+            url = f"https://api.helius.xyz/v0/addresses/{wallet_address}/transactions?api-key={self.api_key}"
+
+            # Make request with httpx directly
+            import httpx
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url, params={"limit": min(limit, 100)})
+                response.raise_for_status()
+                data = response.json()
+
             transactions = []
-            for sig_info in response.get("result", [])[:limit]:
+            for tx in data:
+                # Helius gives us parsed transactions with type, source, and token info
+                tx_type = tx.get("type", "").lower()
+
+                # Only track DEX swaps
+                if tx_type != "swap":
+                    continue
+
+                # Get token info from transaction
+                token_transfers = tx.get("tokenTransfers", [])
+                if not token_transfers:
+                    continue
+
+                # Find the token they're buying (destination token)
+                bought_token = None
+                sold_token = None
+                for transfer in token_transfers:
+                    if transfer.get("toUserAccount") == wallet_address:
+                        bought_token = transfer
+                    elif transfer.get("fromUserAccount") == wallet_address:
+                        sold_token = transfer
+
+                if not bought_token:
+                    continue  # Not a buy for this wallet
+
+                token_address = bought_token.get("mint", "")
+                amount = float(bought_token.get("tokenAmount", 0))
+
+                # Get price from DexScreener
+                token_info = await self.dex_client.get_token_info(token_address)
+                price_usd = token_info.get("price_usd", 0)
+                value_usd = amount * price_usd if price_usd > 0 else 0
+
                 transactions.append({
-                    "tx_hash": sig_info.get("signature"),
-                    "timestamp": datetime.fromtimestamp(sig_info.get("blockTime", 0)) if sig_info.get("blockTime") else datetime.utcnow(),
-                    "type": "buy",  # Simplified - we'd need to parse full tx to know buy/sell
-                    "token_address": "",  # Would need full tx parse
-                    "amount": 0,
-                    "price_usd": 0,
-                    "value_usd": 0,
-                    "dex": "raydium",  # Most common on Solana
+                    "tx_hash": tx.get("signature"),
+                    "timestamp": datetime.fromtimestamp(tx.get("timestamp", 0)) if tx.get("timestamp") else datetime.utcnow(),
+                    "type": "buy",
+                    "token_address": token_address,
+                    "wallet_address": wallet_address,
+                    "amount": amount,
+                    "price_usd": price_usd,
+                    "value_usd": value_usd,
+                    "dex": tx.get("source", "raydium").lower(),
                 })
 
-            logger.info(f"Fetched {len(transactions)} Solana transactions for {wallet_address[:8]}...")
+            logger.info(f"✅ Fetched {len(transactions)} Solana DEX buys for {wallet_address[:8]}...")
             return transactions
 
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Helius API HTTP error {e.response.status_code}: {e.response.text}")
+            return []
         except Exception as e:
             logger.error(f"Helius API error: {str(e)}")
             return []
@@ -133,63 +166,3 @@ class HeliusClient(BaseAPIClient):
             logger.error(f"Helius API error: {str(e)}")
             return []
 
-    async def get_wallet_transactions(
-        self, wallet_address: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
-        """Get recent wallet transactions."""
-        try:
-            response = await self.get(
-                f"/addresses/{wallet_address}/transactions",
-                params={"api-key": self.api_key, "limit": min(limit, 100)}
-            )
-
-            transactions = []
-            for tx in response:
-                # Check if this transaction involves a DEX program
-                dex_program = None
-                dex_name = "unknown"
-                if "instructions" in tx:
-                    for inst in tx.get("instructions", []):
-                        program_id = inst.get("programId", "").lower()
-                        if is_dex_router(program_id, "solana"):
-                            dex_program = program_id
-                            dex_name = get_dex_name(program_id, "solana")
-                            break
-
-                # Skip non-DEX transactions
-                if not dex_program:
-                    continue
-
-                # Extract token info from balance changes
-                token_addr = None
-                amount = 0
-                if "tokenBalanceChanges" in tx and tx["tokenBalanceChanges"]:
-                    change = tx["tokenBalanceChanges"][0]  # Take first token change
-                    token_addr = change.get("mint")
-                    amount = abs(float(change.get("amount", 0)) / 10**9)  # Assume 9 decimals
-
-                # Get price if we have a token
-                price_usd = 0
-                value_usd = 0
-                if token_addr:
-                    token_info = await self.dex_client.get_token_info(token_addr)
-                    price_usd = token_info.get("price_usd", 0)
-                    value_usd = amount * price_usd if price_usd > 0 else 0
-
-                transactions.append({
-                    "tx_hash": tx.get("signature"),
-                    "timestamp": datetime.fromtimestamp(tx.get("timestamp", 0)),
-                    "type": "buy",
-                    "token_address": token_addr,
-                    "amount": amount,
-                    "price_usd": price_usd,
-                    "value_usd": value_usd,
-                    "dex": dex_name,
-                })
-
-            logger.info(f"Fetched {len(transactions)} txs from Helius")
-            return transactions
-
-        except Exception as e:
-            logger.error(f"Helius API error: {str(e)}")
-            return []
