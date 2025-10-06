@@ -181,3 +181,22 @@ class Alert(Base):
         Index("idx_alerts_ts", "ts"),
         Index("idx_alerts_token", "token_address"),
     )
+
+
+class CustomWatchlistWallet(Base):
+    """User-submitted wallets to monitor for confluence (separate from auto-discovered whales)."""
+
+    __tablename__ = "custom_watchlist_wallets"
+
+    address = Column(String(100), primary_key=True)
+    chain_id = Column(String(20), primary_key=True)
+    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    added_by = Column(String(100), nullable=True, default="user")  # For future multi-user support
+    label = Column(String(200), nullable=True)  # Custom label/note for this wallet
+    is_active = Column(Boolean, default=True)  # Can disable without deleting
+    notes = Column(Text, nullable=True)  # Additional notes about this wallet
+
+    __table_args__ = (
+        Index("idx_custom_watchlist_active", "is_active"),
+        Index("idx_custom_watchlist_added", "added_at"),
+    )

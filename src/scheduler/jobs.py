@@ -13,6 +13,8 @@ from src.ingest.wallet_discovery import WalletDiscovery
 from src.monitoring.wallet_monitor import WalletMonitor
 from src.watchlist.rules import WatchlistManager
 from src.scheduler.hourly_report import send_hourly_update
+from src.scheduler.autonomous_trader import autonomous_trading_job
+from src.scheduler.position_manager import manage_positions_job
 
 logger = logging.getLogger(__name__)
 
@@ -145,16 +147,18 @@ async def whale_discovery_job() -> None:
     db = SessionLocal()
 
     try:
-        from src.db.models import SeedToken, Wallet, Trade
+        from src.db.models import SeedToken, Wallet, Trade, Token
         from src.clients.alchemy import AlchemyClient
         from datetime import datetime
 
-        # Get top trending tokens with high liquidity (INCREASED FOR MAX SPEED)
+        # Get MANY MORE trending tokens for broader coverage
+        # JOIN with tokens table to get liquidity (not available in seed_tokens)
         trending_tokens = (
-            db.query(SeedToken)
-            .filter(SeedToken.liquidity_usd > 50000)  # Lowered to $50k for more coverage
-            .order_by(SeedToken.volume_24h_usd.desc())
-            .limit(30)  # Increased to top 30 tokens
+            db.query(SeedToken, Token)
+            .join(Token, SeedToken.token_address == Token.token_address)
+            .filter(Token.liquidity_usd > 50000)  # $50k min liquidity
+            .order_by(SeedToken.vol_24h_usd.desc())  # Order by volume
+            .limit(100)  # EXPANDED: Track top 100 tokens (was 30)
             .all()
         )
 
@@ -164,19 +168,21 @@ async def whale_discovery_job() -> None:
         whale_wallets_found = 0
         large_trades_found = 0
 
-        for token in trending_tokens:
+        for seed_token, token in trending_tokens:
             try:
-                # Get all transfers for this token (INCREASED LIMIT FOR MAX SPEED)
+                # Get RECENT transfers (now looking back only ~3 hours via Alchemy client)
+                # This gives us FRESHER whales, not 3-day-old trades!
                 transfers = await client.get_token_transfers(
-                    token.token_address,
-                    token.chain_id,
-                    limit=100  # Doubled to catch more whales
+                    seed_token.token_address,
+                    seed_token.chain_id,
+                    limit=200  # More transfers to catch more whales
                 )
 
-                # Filter for LARGE transfers ($10k+)
+                # Filter for MEDIUM+ transfers ($1k+) - LOWERED for more signals
+                # Whales making $1k+ trades are still significant!
                 large_transfers = [
                     t for t in transfers
-                    if t.get("value_usd", 0) >= 10000 and t.get("type") == "buy"
+                    if t.get("value_usd", 0) >= 1000 and t.get("type") == "buy"
                 ]
 
                 for transfer in large_transfers:
@@ -192,7 +198,7 @@ async def whale_discovery_job() -> None:
                         # New whale discovered!
                         wallet = Wallet(
                             address=wallet_address,
-                            chain_id=token.chain_id,
+                            chain_id=seed_token.chain_id,
                             first_seen_at=datetime.utcnow(),
                         )
                         db.add(wallet)
@@ -208,9 +214,9 @@ async def whale_discovery_job() -> None:
                         trade = Trade(
                             tx_hash=tx_hash,
                             ts=transfer.get("timestamp", datetime.utcnow()),
-                            chain_id=token.chain_id,
+                            chain_id=seed_token.chain_id,
                             wallet_address=wallet_address,
-                            token_address=token.token_address,
+                            token_address=seed_token.token_address,
                             side="buy",
                             qty_token=float(transfer.get("amount", 0)),
                             price_usd=float(transfer.get("price_usd", 0)),
@@ -225,7 +231,7 @@ async def whale_discovery_job() -> None:
                 await asyncio.sleep(0.1)  # Minimal rate limiting for max speed
 
             except Exception as e:
-                logger.error(f"Error processing {token.symbol}: {str(e)}")
+                logger.error(f"Error processing {token.symbol if token else 'unknown'}: {str(e)}")
                 db.rollback()
                 continue
 
@@ -339,6 +345,15 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # Position management - every 5 minutes (ACTIVE TRADING)
+    scheduler.add_job(
+        manage_positions_job,
+        trigger=IntervalTrigger(minutes=5),
+        id="position_management",
+        name="Manage open positions (take profit/stop loss)",
+        replace_existing=True,
+    )
+
     # Watchlist maintenance - daily at 2 AM UTC
     scheduler.add_job(
         watchlist_maintenance_job,
@@ -357,11 +372,11 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
-    logger.info("Scheduler configured with jobs (MAX SPEED MODE + HOURLY UPDATES):")
+    logger.info("Scheduler configured with jobs (MAX SPEED MODE + OPPORTUNITY-DRIVEN TRADING):")
     logger.info("  - runner_seed: every 5 minutes")
     logger.info("  - wallet_discovery: every 10 minutes")
     logger.info("  - whale_discovery: every 5 minutes ($10k+ trades)")
-    logger.info("  - wallet_monitoring: every 2 minutes")
+    logger.info("  - wallet_monitoring: every 2 minutes (🤖 PAPER TRADES ON CONFLUENCE)")
     logger.info("  - stats_rollup: every 15 minutes")
     logger.info("  - watchlist_maintenance: daily at 2:00 AM UTC")
     logger.info("  - hourly_telegram_update: every hour (paper trading report)")

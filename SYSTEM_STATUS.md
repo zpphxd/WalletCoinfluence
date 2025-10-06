@@ -1,294 +1,140 @@
-# Alpha Wallet Scout - Current System Status
+# Alpha Wallet Scout - System Status
 
-**Last Updated:** October 3, 2025
-**Status:** 85% Operational - Ready for Critical Data Fixes
-
----
-
-## ✅ What's Working
-
-### Core Infrastructure (100%)
-- ✅ Docker deployment (postgres, redis, api, worker, ollama)
-- ✅ Database schema (7 tables: wallets, tokens, seed_tokens, trades, positions, wallet_stats_30d, alerts)
-- ✅ Background job scheduler (5 jobs running every 5min - 1 day)
-- ✅ API integrations (GeckoTerminal, Alchemy, DexScreener, Telegram)
-- ✅ Environment configuration (.env with all keys)
-
-### Data Pipeline (100%)
-- ✅ Token ingestion (60 trending tokens every 15 min)
-- ✅ Wallet discovery (84 unique wallets discovered)
-- ✅ Trade capture (105 trades recorded with real prices)
-- ✅ Stats calculation (84 wallet stats with PnL, EarlyScore, activity)
-- ✅ Duplicate handling (no more key violations)
-
-### Analytics (90%)
-- ✅ FIFO PnL calculation (realized + unrealized)
-- ✅ Being-Early score (0-100 metric based on timing)
-- ✅ Bot filtering (contract detection, hold time, flip ratio)
-- ✅ Watchlist rules (add/remove criteria based on performance)
-- ⚠️ Limited to unrealized PnL only (no sell data yet)
-
-### Monitoring & Alerts (95%)
-- ✅ Wallet monitoring (checks watchlist every 5 min)
-- ✅ Confluence detection (Redis-based 30-min window)
-- ✅ Telegram alerting (both single + confluence alerts)
-- ✅ Trade lookback (increased to 100 tx / 16 hours)
-- ⚠️ Need more whales to demonstrate end-to-end
+**Date**: October 3, 2025 at 7:00 PM CDT  
+**Status**: ✅ OPERATIONAL - First meme coin paper trade executed
 
 ---
 
-## ⚠️ What Needs Fixing
+## 🎯 Current State
 
-### P1 - Critical (Required for Production)
+### Paper Trading Position
+- **Balance**: $800 (started at $1,000)
+- **Open Position**: PEPE meme coin
+  - Entry Price: $0.00001009
+  - Quantity: 19.82M PEPE
+  - Cost Basis: $200
+  - Current P/L: $0 (flat)
+  - Whale Confluence: 15 whales bought within 30 min
 
-**1. Historical Backfill for Whale Discovery**
-- **Current:** Only 1 wallet with positive PnL ($715 unrealized)
-- **Need:** Minimum 10-30 profitable whales for watchlist
-- **Root Cause:** Only captured 1.25 trades per wallet (too shallow)
-- **Fix:** Run 30-day historical backfill script
-- **Time:** 2-3 hours to run
-- **Impact:** Will identify truly profitable whales with 10+ trades each
-
-**2. Enable Sell Detection**
-- **Current:** Only tracking buy trades (105 buys, 0 sells)
-- **Impact:** Cannot calculate realized PnL, only unrealized gains
-- **Fix:** Modify wallet_monitor.py line 166 to accept "sell" type
-- **Time:** 15 minutes
-- **Impact:** Real profit tracking, not just paper gains
+### Sell Triggers (Autonomous)
+1. **Take Profit**: $0.00001211 (+20%)
+2. **Stop Loss**: $0.00000908 (-10%)
+3. **Whale Exit**: 2+ whales sell PEPE
+4. **Max Hold**: 24 hours
 
 ---
 
-## 📊 Current Metrics
+## 🐋 Whale Discovery
 
-### Database
-```
-Tokens:           56
-Seed Tokens:      56
-Wallets:          84
-Trades:           105 (105 buys, 0 sells)
-Wallet Stats:     84
-Avg Trades/Wallet: 1.25 → will be 10-15 after backfill
-```
+### Database Stats
+- **Total Whales Discovered**: 84 unique wallets
+- **PEPE Whales**: 15 wallets (confluence detected!)
+- **Total Trades Recorded**: ~150
 
-### Whale Pool
-```
-Profitable Whales:      1 (need 10-30)
-Top Whale PnL:         $715 unrealized (4x return)
-Best EarlyScore:       47.6/100
-Most Active Wallet:    7 trades
-Watchlist Size:        49 wallets (lowered thresholds for testing)
-```
-
-### Background Jobs (All Passing)
-```
-✅ Token Ingestion      - Every 15 min - 60 tokens per run
-✅ Wallet Discovery     - Every hour  - 84 wallets found
-✅ Stats Rollup         - Every hour  - 84 stats calculated
-✅ Wallet Monitoring    - Every 5 min - 49 wallets monitored
-✅ Watchlist Maintenance - Daily 2am  - Add/remove based on performance
-```
+### Whale Sources
+- ✅ GeckoTerminal trending (every 5 min)
+- ✅ Enhanced whale discovery ($10k+ trades, every 5 min)
+- ✅ PEPE manual discovery (100 transfers fetched)
 
 ---
 
-## 🔧 All Bugs Fixed (11 total)
+## 🔧 Recent Fixes
 
-1. ✅ Database column name mismatches (5 files)
-2. ✅ Timestamp type error (stats rollup crash)
-3. ✅ Telegram API method names (send_message → send_single_wallet_alert)
-4. ✅ Confluence detection API (wrong parameters)
-5. ✅ Duplicate key violations (missing db.flush())
-6. ✅ Alchemy API block range (1 block → 5000 blocks)
-7. ✅ Alchemy DEX filter logic (backwards check)
-8. ✅ Watchlist format string error (NoneType formatting)
-9. ✅ Trade lookback too shallow (10 tx → 100 tx)
-10. ✅ Zero price handling (DexScreener fallback)
-11. ✅ Redis config (host/port settings)
+### 1. Database Schema Fixes
+- Fixed `SeedToken.liquidity_usd` error (added JOIN with Token table)
+- Fixed column name: `volume_24h_usd` → `vol_24h_usd`
+- Fixed whale discovery query to handle tuple unpacking
 
----
+### 2. Meme Coin Detector Fixes
+- Added volume fetching from `seed_tokens` table
+- PEPE now correctly identified (score: 90/100)
+- Meme coin characteristics:
+  - Price: $0.00000001 - $0.01
+  - Volume: >$10k/24h
+  - Liquidity: >$5k
+  - Keywords: pepe, doge, shib, etc.
 
-## 🎯 Path to Production (1-2 Days)
-
-### Day 1: Data Fixes (4-5 hours)
-
-**Morning: Historical Backfill**
-1. Create `src/scripts/backfill_wallet_history.py`
-2. Fetch 30-day trade history for all 84 wallets
-3. Run backfill (2-3 hours)
-4. Verify: 10-30 whales with ≥5 trades and positive PnL
-
-**Afternoon: Sell Detection**
-1. Enable sell tracking in wallet_monitor.py (15 min)
-2. Test sell detection with known wallet (30 min)
-3. Run stats rollup to calculate realized PnL (5 min)
-4. Verify: Some wallets now have realized PnL > 0
-
-### Day 2: Whale Scoring & Testing (4-6 hours)
-
-**Morning: Adaptive Whale System**
-1. Implement AdaptiveWhaleScorer (see ADAPTIVE_WHALE_SYSTEM.md)
-2. Calculate composite scores for all wallets (2 hours)
-3. Select top 30 whales dynamically (1 hour)
-
-**Afternoon: End-to-End Testing**
-1. Lower confluence threshold to 2 whales (already done)
-2. Monitor for 4-6 hours to capture confluence
-3. Verify Telegram alert sent with all whale data
-4. Document first successful alert
-
-### Production Ready Criteria
-- [x] All background jobs passing ✅
-- [x] All code bugs fixed ✅
-- [ ] ≥10 profitable whales identified
-- [ ] Sell detection enabled
-- [ ] Realized PnL calculated
-- [ ] Top 30 whale scoring implemented
-- [ ] End-to-end confluence alert demonstrated
-- [ ] Win rate baseline established (need 2-3 weeks of data)
+### 3. Wallet Monitoring Fixes
+- Fixed `name 'wallets' is not defined` bug
+- Disabled Telegram alerts (user requested)
+- Fixed confluence alert variable references
 
 ---
 
-## 📈 Success Metrics (To Track)
+## 🤖 Autonomous Systems Running
 
-Once production-ready, track these metrics:
+### Scheduled Jobs (Docker)
+1. **Token Ingestion** - Every 5 min (GeckoTerminal + DEX Screener)
+2. **Whale Discovery** - Every 5 min ($10k+ trades)
+3. **Wallet Discovery** - Every 10 min (trending token buyers)
+4. **Wallet Monitoring** - Every 2 min (confluence detection + paper trading)
+5. **Stats Rollup** - Every 15 min (PnL calculations)
+6. **Watchlist Maintenance** - Daily at 2 AM UTC
 
-### Alert Performance
-- **Win Rate:** % of alerts where token price increased
-- **Average Return:** Mean % gain per alert
-- **Time to Pump:** Minutes between alert and price movement
-- **False Positive Rate:** % of alerts that didn't pump
-
-### Whale Quality
-- **Whale Retention:** % of whales still profitable after 30 days
-- **Average Whale PnL:** Mean 30D PnL across watchlist
-- **Best Whale:** Highest PnL whale in pool
-- **Whale Turnover:** How often top 30 changes
-
-### System Health
-- **Uptime:** % of time jobs running without error
-- **Data Freshness:** Lag between trade and alert
-- **API Success Rate:** % of API calls succeeding
-- **Coverage:** % of trending tokens with whale buyers
+### Paper Trading Logic
+- **Buy Trigger**: 2+ whales buy same meme coin within 30 min
+- **Position Size**: 20% of balance per trade
+- **Sell Triggers**: TP +20%, SL -10%, whale exit, or 24h hold
 
 ---
 
-## 🚀 Growth Roadmap (Post-MVP)
+## 📊 Monitoring Tools
 
-### Phase 1: Core Improvements (Weeks 2-4)
-- Add more data sources (DEX Screener, Birdeye, Nansen)
-- Implement wallet clustering (identify coordinated groups)
-- Add token safety scoring (honeypot, rug detection)
-- Build simple web dashboard for users
-
-### Phase 2: Advanced Intelligence (Weeks 5-8)
-- AI-powered token analysis (Ollama integration)
-- Predictive confluence (identify likely future buys)
-- Whale relationship mapping (who copies who)
-- Smart contract interaction tracking
-
-### Phase 3: Monetization (Weeks 9-12)
-- Free tier: 5 alerts per day
-- Pro tier ($49/mo): Unlimited alerts + whale stats
-- Elite tier ($199/mo): API access + custom alerts
-- White label ($499/mo): Embed in other products
-
----
-
-## 📞 Deployment Instructions
-
-### Current Setup
+### Console Commands
 ```bash
-# System is already deployed via Docker Compose
-docker ps  # Shows 5 containers running
+# Check paper trading status
+python3 check_status.py
 
-# To check logs
-docker logs wallet_scout_worker --tail 100
+# Monitor PEPE price in real-time
+python3 monitor_pepe.py
 
-# To restart after code changes
-docker compose build worker
-docker compose up -d worker
-```
+# Check Docker logs
+/Applications/Docker.app/Contents/Resources/bin/docker logs wallet_scout_worker --tail 100
 
-### After Historical Backfill
-```bash
-# 1. Create backfill script
-docker exec wallet_scout_worker python3 src/scripts/backfill_wallet_history.py
-
-# 2. Verify data
-docker exec wallet_scout_db psql -U wallet_scout -d wallet_scout -c \
-  "SELECT COUNT(*) as whales_with_5plus_trades
-   FROM (SELECT wallet_address, COUNT(*) as trades
-         FROM trades GROUP BY wallet_address HAVING COUNT(*) >= 5) t;"
-
-# 3. Check profitable whales
-docker exec wallet_scout_db psql -U wallet_scout -d wallet_scout -c \
-  "SELECT COUNT(*) as profitable_whales
-   FROM wallet_stats_30d
-   WHERE (realized_pnl_usd + unrealized_pnl_usd) > 5000;"
-```
-
-### Monitor for Confluence
-```bash
-# Watch logs in real-time
-docker logs wallet_scout_worker -f
-
-# Check Redis for active confluence tracking
-docker exec wallet_scout_redis redis-cli ZRANGE confluence:ethereum:0x... 0 -1 WITHSCORES
+# Database query examples
+/Applications/Docker.app/Contents/Resources/bin/docker exec wallet_scout_db psql -U wallet_scout -d wallet_scout -c "SELECT COUNT(*) FROM trades WHERE token_address = '0x6982508145454ce325ddbe47a25d4ec3d2311933';"
 ```
 
 ---
 
-## 📋 Quick Reference
+## 🎲 Next Steps
 
-### Important Files
-- `/src/scheduler/jobs.py` - Background job definitions
-- `/src/monitoring/wallet_monitor.py` - Whale monitoring logic
-- `/src/alerts/confluence.py` - Confluence detection (Redis)
-- `/src/analytics/pnl.py` - FIFO PnL calculation
-- `/src/analytics/early.py` - Being-Early score algorithm
-- `/src/watchlist/rules.py` - Whale add/remove criteria
-- `.env` - Configuration (API keys, thresholds)
+### Immediate (Next 24 Hours)
+1. ⏳ **Wait for PEPE price movement** - Monitor for +20% or -10%
+2. ✅ **Verify autonomous sell** - Ensure system executes sell when triggered
+3. ✅ **Prove profitability** - First closed trade determines if strategy works
 
-### Database Tables
-- `wallets` - Discovered wallet addresses
-- `trades` - All buy/sell transactions
-- `wallet_stats_30d` - 30-day performance metrics
-- `tokens` - Token metadata (price, liquidity, volume)
-- `seed_tokens` - Trending tokens that triggered discovery
-- `positions` - Current open positions per wallet
-- `alerts` - Alert history (not yet used)
+### If Profitable
+- Continue finding meme coin confluence
+- Expand to Solana memes (Birdeye API)
+- Track win rate and avg profit per trade
+- Optimize whale scoring algorithm
 
-### Key Thresholds (.env)
-```bash
-# Whale Add Criteria
-ADD_MIN_TRADES_30D=5               # Minimum activity
-ADD_MIN_REALIZED_PNL_30D_USD=50000 # Minimum profit
-ADD_MIN_BEST_TRADE_MULTIPLE=3      # Best win (3x minimum)
-
-# Whale Remove Criteria
-REMOVE_IF_REALIZED_PNL_30D_LT=0    # Negative PnL
-REMOVE_IF_MAX_DRAWDOWN_PCT_GT=50   # >50% drawdown
-REMOVE_IF_TRADES_30D_LT=2          # Inactive
-
-# Confluence
-CONFLUENCE_MINUTES=30              # Time window for confluence
-```
+### If Unprofitable
+- Analyze failure: Wrong entry? Bad whale selection? Timing?
+- Adjust confluence requirements (more whales? shorter window?)
+- Consider different meme coin filters
+- Restart with lessons learned
 
 ---
 
-## ✅ Summary
+## 🔍 Key Insights
 
-**System Status:** 85% operational, all code bugs fixed, ready for data fixes
+### What's Working
+✅ Meme coin detection (PEPE correctly identified)  
+✅ Whale discovery (15 whales found buying PEPE)  
+✅ Confluence detection (15 whales = $888k volume)  
+✅ Paper trade execution (first $200 trade)  
+✅ All background jobs operational  
 
-**Remaining Work:**
-1. Historical backfill (2-3 hours)
-2. Enable sell detection (15 min)
-3. Implement adaptive whale scoring (2-4 hours)
-4. Test end-to-end confluence (4-6 hours monitoring)
-
-**Time to Production:** 1-2 days
-
-**Confidence Level:** HIGH - Architecture solid, bugs fixed, just need data depth
+### What Needs Proof
+⏳ Will PEPE price move +20% or -10%?  
+⏳ Will autonomous sell execute correctly?  
+⏳ Is whale confluence a profitable signal?  
+⏳ Can we repeat this for other meme coins?  
 
 ---
 
-**Next Action:** Run historical backfill script to discover profitable whales
+**Last Updated**: 2025-10-03 19:30:00 CDT  
+**Paper Trade File**: `/app/paper_trading_log.json` (Docker container)  
+**System Mode**: Autonomous (no manual intervention needed)

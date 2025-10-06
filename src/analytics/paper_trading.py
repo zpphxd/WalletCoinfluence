@@ -166,7 +166,7 @@ class PaperTradingTracker:
 
         return closed_trade
 
-    def check_open_positions(self, price_fetcher) -> List[Dict[str, Any]]:
+    async def check_open_positions(self, price_fetcher) -> List[Dict[str, Any]]:
         """Check all open positions and calculate current value.
 
         Args:
@@ -175,16 +175,12 @@ class PaperTradingTracker:
         Returns:
             List of positions with current values
         """
-        import asyncio
-
         results = []
 
         for token_address, position in self.positions.items():
             # Get current price
             try:
-                current_price = asyncio.run(
-                    price_fetcher.get_token_price(token_address, position["chain_id"])
-                )
+                current_price = await price_fetcher.get_token_price(token_address, position["chain_id"])
             except Exception as e:
                 logger.error(f"Error fetching price for {token_address[:16]}...: {e}")
                 current_price = position["entry_price"]  # Fallback
@@ -193,7 +189,12 @@ class PaperTradingTracker:
             unrealized_pnl = current_value - position["cost_basis"]
             unrealized_pct = (unrealized_pnl / position["cost_basis"]) * 100
 
-            hold_time = datetime.utcnow() - position["bought_at"]
+            # Handle both datetime and string formats for bought_at
+            bought_at = position["bought_at"]
+            if isinstance(bought_at, str):
+                # Parse ISO format string: "2025-10-06T15:02:15.123456"
+                bought_at = datetime.fromisoformat(bought_at.replace('Z', '+00:00'))
+            hold_time = datetime.utcnow() - bought_at
 
             results.append({
                 "token_address": token_address,
@@ -278,7 +279,12 @@ class PaperTradingTracker:
 
         report += f"\n📈 OPEN POSITIONS: {len(self.positions)}\n"
         for token_addr, pos in list(self.positions.items())[:5]:
-            hold_time = datetime.utcnow() - pos["bought_at"]
+            # Handle both datetime and string formats for bought_at
+            bought_at = pos["bought_at"]
+            if isinstance(bought_at, str):
+                # Parse ISO format string: "2025-10-06T15:02:15.123456"
+                bought_at = datetime.fromisoformat(bought_at.replace('Z', '+00:00'))
+            hold_time = datetime.utcnow() - bought_at
             report += f"""   {token_addr[:16]}... | Entry: ${pos['entry_price']:.6f} |
    Hold: {hold_time.total_seconds() / 3600:.1f}h | Whales: {pos['num_whales']}
 """
@@ -326,3 +332,43 @@ class PaperTradingTracker:
             json.dump(data, f, indent=2, default=str)
 
         logger.info(f"📁 Paper trading state saved to {filename}")
+
+    @classmethod
+    def load_from_file(cls, filename: str = "paper_trading_log.json"):
+        """Load paper trading state from JSON file.
+
+        Args:
+            filename: Filename to load from
+
+        Returns:
+            PaperTradingTracker instance or None if file doesn't exist
+        """
+        import json
+        import os
+
+        if not os.path.exists(filename):
+            return None
+
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+
+            # Create instance
+            from sqlalchemy.orm import Session
+            tracker = cls(Session(), starting_balance=data.get("starting_balance", 1000.0))
+
+            # Restore state
+            tracker.current_balance = data.get("current_balance", tracker.starting_balance)
+            tracker.positions = data.get("positions", {})
+            tracker.closed_trades = data.get("closed_trades", [])
+            tracker.total_profit = data.get("total_profit", 0.0)
+            tracker.total_loss = data.get("total_loss", 0.0)
+            tracker.win_count = data.get("win_count", 0)
+            tracker.loss_count = data.get("loss_count", 0)
+
+            logger.info(f"📁 Paper trading state loaded from {filename}")
+            return tracker
+
+        except Exception as e:
+            logger.error(f"Error loading paper trading state: {str(e)}")
+            return None

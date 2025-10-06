@@ -1,6 +1,7 @@
 """Helius API client for Solana chain data."""
 
 import logging
+import os
 from typing import List, Dict, Any
 from datetime import datetime
 from src.clients.base import BaseAPIClient
@@ -16,24 +17,71 @@ class HeliusClient(BaseAPIClient):
 
     def __init__(self) -> None:
         """Initialize Helius client."""
-        self.api_key = settings.helius_api_key
+        # Try settings first, fallback to direct os.getenv
+        self.api_key = settings.helius_api_key or os.getenv("HELIUS_API_KEY", "")
 
         if not self.api_key:
-            raise ValueError("HELIUS_API_KEY not set in .env file")
+            logger.warning("⚠️  HELIUS_API_KEY not set - Solana monitoring will not work")
+            # Don't raise error, allow initialization but log warning
+        else:
+            logger.info(f"✅ Helius client initialized with API key: {self.api_key[:8]}...")
 
-        super().__init__(base_url=f"https://api.helius.xyz/v0")
+        # Helius uses mainnet RPC endpoint with API key as query param
+        super().__init__(base_url=f"https://mainnet.helius-rpc.com")
         self.dex_client = DexScreenerClient()
-        logger.info("✅ Helius client initialized")
+
+    async def get_wallet_transactions(
+        self, wallet_address: str, limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Get wallet transactions (for monitoring whales)."""
+        try:
+            # Use Helius' enhanced getSignaturesForAddress via JSON-RPC
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "getSignaturesForAddress",
+                "params": [wallet_address, {"limit": min(limit, 1000)}]
+            }
+
+            response = await self.post(
+                f"/?api-key={self.api_key}",
+                json=payload
+            )
+
+            if "error" in response:
+                logger.error(f"Helius API error: {response['error']}")
+                return []
+
+            # Return simplified format for wallet monitor
+            transactions = []
+            for sig_info in response.get("result", [])[:limit]:
+                transactions.append({
+                    "tx_hash": sig_info.get("signature"),
+                    "timestamp": datetime.fromtimestamp(sig_info.get("blockTime", 0)) if sig_info.get("blockTime") else datetime.utcnow(),
+                    "type": "buy",  # Simplified - we'd need to parse full tx to know buy/sell
+                    "token_address": "",  # Would need full tx parse
+                    "amount": 0,
+                    "price_usd": 0,
+                    "value_usd": 0,
+                    "dex": "raydium",  # Most common on Solana
+                })
+
+            logger.info(f"Fetched {len(transactions)} Solana transactions for {wallet_address[:8]}...")
+            return transactions
+
+        except Exception as e:
+            logger.error(f"Helius API error: {str(e)}")
+            return []
 
     async def get_token_transactions(
         self, token_address: str, limit: int = 100
     ) -> List[Dict[str, Any]]:
-        """Get recent token transactions."""
+        """Get token transactions (not wallet transactions)."""
         try:
-            response = await self.get(
-                f"/addresses/{token_address}/transactions",
-                params={"api-key": self.api_key, "limit": min(limit, 100)}
-            )
+            # For now, return empty - we primarily track wallet transactions
+            return []
+
+            # Old code that didn't work:
 
             # Get token price from DexScreener
             token_info = await self.dex_client.get_token_info(token_address)

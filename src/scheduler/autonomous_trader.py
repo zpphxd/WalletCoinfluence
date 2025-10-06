@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from typing import Dict, Any
 from sqlalchemy.orm import Session
 
 from src.analytics.paper_trading import PaperTradingTracker
@@ -30,11 +31,11 @@ class AutonomousPaperTrader:
         # Trading rules (will evolve based on performance)
         self.rules = {
             "buy_amount_pct": 0.20,  # Invest 20% of balance per trade
-            "min_whales_for_buy": 2,  # Need at least 2 whales for confluence
-            "take_profit_pct": 20.0,  # Sell at +20% profit
+            "min_whales_for_buy": 5,  # Need at least 5 whales for confluence
+            "take_profit_pct": 5.0,  # Sell at +5% profit (compound small wins!)
             "stop_loss_pct": -10.0,  # Sell at -10% loss
             "max_hold_hours": 24.0,  # Auto-sell after 24 hours
-            "min_whale_pnl": 1000.0,  # Only follow whales with >$1k PnL
+            "min_whale_pnl": 500.0,  # Only follow whales with >$500 PnL
         }
 
         logger.info(
@@ -236,7 +237,7 @@ class AutonomousPaperTrader:
 
         return sells_executed
 
-    async def run_trading_cycle(self) -> Dict[str, any]:
+    async def run_trading_cycle(self) -> Dict[str, Any]:
         """Run one complete trading cycle (check buys, check sells, report).
 
         Returns:
@@ -251,7 +252,7 @@ class AutonomousPaperTrader:
         sells = await self.check_for_sells()
 
         # Get current portfolio value
-        open_positions = self.paper_trader.check_open_positions(self.price_fetcher)
+        open_positions = await self.paper_trader.check_open_positions(self.price_fetcher)
         total_open_value = sum(pos["current_value"] for pos in open_positions)
         total_portfolio = self.paper_trader.current_balance + total_open_value
 

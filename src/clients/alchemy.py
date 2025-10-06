@@ -48,7 +48,8 @@ class AlchemyClient(BaseAPIClient):
             }
             block_response = await self.post("", data=block_payload)
             latest_block = int(block_response.get("result", "0x0"), 16)
-            # Look back ~1000 blocks (about 3.3 hours on Ethereum)
+            # CHANGED: Look back only 1000 blocks (~3 hours) for FRESH RECENT whales!
+            # We want whales trading RIGHT NOW, not 2 weeks ago
             from_block = max(0, latest_block - 1000)
 
             # Use Alchemy's getAssetTransfers API with block range
@@ -142,8 +143,8 @@ class AlchemyClient(BaseAPIClient):
             }
             block_response = await self.post("", data=block_payload)
             latest_block = int(block_response.get("result", "0x0"), 16)
-            # Look back ~5000 blocks (about 16 hours on Ethereum) for wallet history
-            from_block = max(0, latest_block - 5000)
+            # Look back 100,000 blocks (about 14 days on Ethereum) to find REAL whales with $100k+ PnL
+            from_block = max(0, latest_block - 100000)
 
             transactions = []
 

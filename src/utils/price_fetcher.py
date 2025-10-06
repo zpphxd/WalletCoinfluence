@@ -7,6 +7,7 @@ import asyncio
 from src.clients.dexscreener import DexScreenerClient
 from src.clients.birdeye import BirdeyeClient
 from src.clients.coingecko import CoinGeckoClient
+from src.utils.api_cache import cached
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,11 @@ class MultiSourcePriceFetcher:
             "coingecko": 0,
         }
 
+    @cached(ttl_seconds=60)  # Cache prices for 60 seconds to reduce API calls
     async def get_token_price(
         self, token_address: str, chain_id: str = "ethereum"
     ) -> float:
-        """Get current token price trying multiple sources with fallbacks.
+        """Get current token price trying multiple sources with fallbacks (CACHED 60s).
 
         Tries in order:
         1. DexScreener (best for EVM chains, has liquidity data)

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from src.db.models import Token, SeedToken, Wallet, Trade
+from src.utils.meme_coin_detector import MemeCoinDetector
 from src.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class WalletDiscovery:
             db: Database session
         """
         self.db = db
+        self.meme_detector = MemeCoinDetector(db)
 
     async def discover_from_seed_tokens(self, hours_back: int = 24) -> int:
         """Discover wallets from recent seed tokens.
@@ -48,14 +50,30 @@ class WalletDiscovery:
 
             for seed in seed_tokens:
                 try:
-                    # Fetch buyers for this token
+                    # 🎯 FILTER: Only discover wallets from MEME COINS!
+                    is_meme = self.meme_detector.is_meme_coin(
+                        seed.token_address,
+                        seed.chain_id,
+                        price_usd=seed.price_usd,
+                        symbol=seed.symbol,
+                        volume_24h=seed.volume_24h_usd,
+                        liquidity=seed.liquidity_usd,
+                    )
+
+                    if not is_meme:
+                        logger.debug(f"Skipping non-meme token: {seed.symbol} ({seed.token_address[:10]}...)")
+                        continue
+
+                    logger.info(f"🎯 MEME COIN SEED: {seed.symbol} - discovering whale buyers...")
+
+                    # Fetch buyers for this MEME token
                     wallets = await self._fetch_token_buyers(
                         seed.token_address, seed.chain_id
                     )
 
                     total_wallets += wallets
                     logger.info(
-                        f"Discovered {wallets} wallets for {seed.token_address[:10]}..."
+                        f"Discovered {wallets} MEME COIN whales for {seed.token_address[:10]}..."
                     )
 
                 except Exception as e:
